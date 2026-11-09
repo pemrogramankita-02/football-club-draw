@@ -277,3 +277,40 @@ footer span{color:#398de3}
 .league-fixture.fixture-current{outline:3px solid var(--primary,#2f80c5);box-shadow:0 10px 32px rgba(30,100,160,.18);transform:translateY(-2px);transition:all .35s ease}
 .league-fixture.fixture-reveal{animation:leagueReveal .55s ease both}
 @keyframes leagueReveal{0%{opacity:.35;transform:scale(.985)}100%{opacity:1;transform:scale(1)}}
+
+/* Accessibility refinement — larger, clearer typography */
+:root{font-size:16px}
+body{font-size:16px;line-height:1.5}
+h1{font-size:clamp(25px,2.2vw,30px)}
+.eyebrow,.side-label{font-size:11px;letter-spacing:1.4px}
+.brand b{font-size:15px}.brand small{font-size:12px}
+.nav-item{font-size:15px;padding:13px 12px;min-height:46px}
+.nav-item span{font-size:15px}
+.sidebar-foot{font-size:11px}
+.save-state{font-size:13px}
+.section-head h2,.panel h2{font-size:19px}
+.section-head p{font-size:14px;line-height:1.55}
+.stat small{font-size:13px}.stat strong{font-size:30px}.stat em{font-size:12px}
+.hero h2{font-size:24px}.hero p{font-size:15px}
+.btn{font-size:14px;padding:12px 16px;min-height:42px}
+.btn-sm{font-size:13px;padding:10px 13px;min-height:38px}
+table{font-size:14px}th{font-size:12px}th,td{padding:13px 14px}
+.pill{font-size:12px;padding:5px 10px}
+.empty{font-size:14px}.empty b{font-size:16px}
+.field label{font-size:13px}
+.field input,.field select,.field textarea{font-size:15px;min-height:44px}
+.hint,.tiny{font-size:12px}
+.group-title{font-size:14px}.group-card td,.group-card th{padding:11px 12px}
+.draw-stage .big{font-size:40px}.draw-stage .club-name{font-size:23px}.draw-stage .group-tag{font-size:13px}
+.match-team{font-size:14px}.toast{font-size:14px}
+.modal-head h3{font-size:18px}.notice{font-size:13px}
+footer{font-size:11px}
+@media(max-width:680px){
+ .topbar{padding:14px 16px;min-height:82px;height:auto}
+ h1{font-size:25px}.content{padding:20px 15px 42px}
+ .section-head{align-items:flex-start;flex-direction:column}
+ .section-head h2,.panel h2{font-size:20px}
+ .section-head p{font-size:14px}.btn{font-size:14px}.btn-sm{font-size:13px}
+ .nav-item{font-size:15px}.stat small{font-size:13px}
+ .tiny,.hint{font-size:12px}.group-grid{grid-template-columns:1fr}
+}
