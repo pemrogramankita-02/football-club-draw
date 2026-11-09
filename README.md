@@ -92,3 +92,11 @@ Saat membuat turnamen, pilih **Liga penuh (round-robin)**. Buat jadwal liga untu
 - Format kompetisi: Fase Grup, Babak Knockout, Fase Grup + Knockout, atau Liga.
 - Berpindah turnamen melalui menu **Ganti Turnamen**. Jadwal, hasil, dan klasemen difilter berdasarkan ID turnamen.
 - Navigasi sidebar disesuaikan untuk layar HP; menu turnamen aktif ditampilkan di bagian atas.
+
+
+## Revisi 01–05
+- Video Live Draw vertikal 9:16 dengan papan penempatan grup yang muncul bertahap.
+- Gambar jadwal Matchday menggunakan kartu pertandingan bergaya aplikasi.
+- Gambar klasemen liga menggunakan tabel vertikal yang mudah dibaca.
+- Ukuran tipografi antarmuka diperbesar untuk aksesibilitas.
+- Tombol Instal Aplikasi di header dihilangkan; manifest dan service worker PWA tetap dipertahankan.
