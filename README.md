@@ -107,3 +107,15 @@ Saat membuat turnamen, pilih **Liga penuh (round-robin)**. Buat jadwal liga untu
 - Jadwal fase grup disusun round-robin per grup dan dikelompokkan lintas grup berdasarkan Matchday (misalnya Matchday 1 memuat Grup A, B, C, dan D).
 - Pertandingan fase grup lama yang belum memiliki indeks Matchday dipetakan otomatis ke urutan round-robin saat halaman jadwal dibuka.
 - Cache service worker diperbarui agar browser mengambil file revisi terbaru.
+
+
+## Revisi 07 — Full Screen Share & tema baru
+- Gambar klasemen liga, fase grup, knockout, dan jadwal memakai format portrait Full HD 1080 × 1920. Data panjang dipisah otomatis menjadi beberapa halaman; setiap halaman diberi nomor.
+- Jadwal Match Day dapat dibagikan sebagai teks WhatsApp yang memuat setiap pasangan klub, nomor HP kedua klub (atau keterangan belum ditambahkan), serta ucapan “Selamat bertanding, hubungi lawan main, good luck!”.
+- Nomor WhatsApp klub fleksibel: dapat diisi ketika klub dibuat atau diedit setelah klub tersimpan. Kolom nomor tetap opsional.
+- Tema aplikasi: Black Charcoal, Sky Blue, dan Soft Yellow. Font antarmuka Roboto, ukuran teks dan area sentuh diperbesar, dengan prioritas mobile-first.
+- Berbagi beberapa gambar sekaligus memerlukan dukungan Web Share API pada browser. Jika tidak didukung, gambar diunduh satu per satu dan pesan WhatsApp dibuka agar gambar dapat dilampirkan manual.
+
+
+## Ikon aplikasi
+Ikon aplikasi menggunakan lambang sepak bola yang diberikan pengguna. Berkas PNG 192×192 dan 512×512 digunakan untuk PWA, Android, dan favicon. Setelah pembaruan di-host, perbarui/instal ulang shortcut PWA jika ikon lama masih tersimpan oleh launcher.
