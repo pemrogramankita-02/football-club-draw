@@ -1,5 +1,5 @@
-const CACHE='fcd-revisi-06-full-table-group-matchday';
-const CORE=['./','./index.html','./manifest.json','./css/style.css','./js/app.js','./assets/icons/icon.svg'];
+const CACHE='fcd-revisi-07-emblem-icon-20261110';
+const CORE=['./','./index.html','./manifest.json','./css/style.css','./js/app.js','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
 self.addEventListener('fetch',e=>{if(e.request.method!=='GET')return;e.respondWith(caches.match(e.request).then(cached=>cached||fetch(e.request).then(r=>{if(r.ok&&new URL(e.request.url).origin===location.origin){let copy=r.clone();caches.open(CACHE).then(c=>c.put(e.request,copy))}return r}).catch(()=>caches.match('./index.html'))))});
