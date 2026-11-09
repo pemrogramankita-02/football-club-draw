@@ -1,4 +1,4 @@
-const CACHE='fcd-revisi-01-05-live-draw-accessible-fonts';
+const CACHE='fcd-revisi-06-full-table-group-matchday';
 const CORE=['./','./index.html','./manifest.json','./css/style.css','./js/app.js','./assets/icons/icon.svg'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
