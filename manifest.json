@@ -1,3 +1,6 @@
+FILE TUJUAN: manifest.json
+Salin seluruh isi setelah garis pemisah ke file dengan nama tujuan di atas.
+========================================================================
 {
   "name": "FOOTBALL CLUB DRAW",
   "short_name": "Club Draw",
@@ -6,7 +9,7 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#ffffff",
+  "background_color": "#171c24",
   "theme_color": "#171c24",
   "icons": [
     {
