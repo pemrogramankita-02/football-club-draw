@@ -1,3 +1,6 @@
+FILE TUJUAN: js/app.js
+Salin seluruh isi setelah garis pemisah ke file dengan nama tujuan di atas.
+========================================================================
 /* FOOTBALL CLUB DRAW v2.0 — local-first tournament manager */
 (() => {
 'use strict';
@@ -98,7 +101,7 @@ function animateDraw(d){
 }
 function getDraw(){return db.draws.find(d=>d.tournamentId===active()?.id)}
 function tableStandings(group){let teams=group.clubs.map(c=>({club:c,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));let matches=db.matches.filter(m=>m.tournamentId===active()?.id&&m.group===group.name&&m.played);for(let m of matches){let a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)continue;a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}}return teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.name.localeCompare(b.club.name))}
-function groupsPage(){let d=getDraw(),t=active();if(t?.format==='league')return leagueStandingsPage();if(!d)return `<div class="empty"><b>Hasil pengundian belum tersedia</b>Selesaikan pengundian terlebih dahulu.</div>`;return `<div class="section-head"><div><h2>Hasil & Klasemen Grup</h2><p>Masukkan skor di menu Jadwal & Skor untuk memperbarui klasemen.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareGroupChart">Bagikan Bagan Grup via WhatsApp</button><button class="btn btn-ghost" onclick="window.print()">Cetak Klasemen</button></div></div><div class="grid group-grid">${d.groups.map(g=>{let s=tableStandings(g);return `<div class="group-card"><div class="group-title">${esc(g.name)}</div><table><thead><tr><th>Klub</th><th>MP</th><th>GD</th><th>PTS</th></tr></thead><tbody>${s.map(x=>`<tr><td><div class="club-cell"><img class="club-logo" src="${logo(x.club)}">${esc(x.club.name)}</div></td><td>${x.mp}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div>`}).join('')}</div>`}
+function groupsPage(){let d=getDraw(),t=active();if(t?.format==='league')return leagueStandingsPage();if(!d)return `<div class="empty"><b>Hasil pengundian belum tersedia</b>Selesaikan pengundian terlebih dahulu.</div>`;return `<div class="section-head"><div><h2>Hasil & Klasemen Grup</h2><p>Seluruh grup ditampilkan dengan statistik lengkap. Masukkan skor untuk memperbarui klasemen.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareGroupChart">Bagikan Semua Grup via WhatsApp</button><button class="btn btn-ghost" onclick="window.print()">Cetak Klasemen</button></div></div><div class="grid group-grid">${d.groups.map(g=>{let s=tableStandings(g);return `<div class="group-card"><div class="group-title">${esc(g.name)}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Tim</th><th>T</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>Poin</th></tr></thead><tbody>${s.map((x,i)=>`<tr><td>${i+1}</td><td><div class="club-cell"><img class="club-logo" src="${logo(x.club)}">${esc(x.club.name)}</div></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div></div>`}).join('')}</div>`}
 function generateLeague(){
  let t=active();if(!t||t.format!=='league')return;
  let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean);
@@ -337,103 +340,47 @@ function generateKO(){
 }
 
 function shareCanvasBase(title,subtitle,rows){
- const width=1400,rowH=92,headerH=300,height=Math.max(900,headerH+rows.length*rowH+100);
- const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;
- const x=canvas.getContext('2d'),g=x.createLinearGradient(0,0,width,height);
- g.addColorStop(0,'#edf6ff');g.addColorStop(1,'#d4e7f8');x.fillStyle=g;x.fillRect(0,0,width,height);
- x.fillStyle='#244d75';x.textAlign='center';x.font='bold 54px Arial';x.fillText('FOOTBALL CLUB DRAW',width/2,100);
- x.fillStyle='#315d83';x.font='bold 42px Arial';x.fillText(String(title||'HASIL TURNAMEN').slice(0,45),width/2,175);
- x.fillStyle='#2678b9';x.font='28px Arial';x.fillText(String(subtitle||'').slice(0,65),width/2,235);
- x.textAlign='left';
- rows.forEach((row,i)=>{const y=headerH+i*rowH;x.fillStyle='#fff';x.beginPath();x.roundRect(45,y,width-90,rowH-12,16);x.fill();x.fillStyle='#1c3550';x.font='bold 27px Arial';x.fillText(String(row).slice(0,88),75,y+53)});
- x.textAlign='center';x.fillStyle='#52718c';x.font='22px Arial';x.fillText('DIBUAT DENGAN FOOTBALL CLUB DRAW',width/2,height-35);
- return canvas;
+ const W=1080,H=1920,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+ x.fillStyle='#171c24';x.fillRect(0,0,W,H);x.fillStyle='#79c8f2';x.fillRect(0,0,W,14);
+ x.textAlign='center';x.fillStyle='#a9b8c7';x.font='500 22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • TOURNAMENT MANAGEMENT',W/2,85);
+ x.fillStyle='#f4d77b';x.font='bold 48px Roboto,Arial';x.fillText(String(title||'HASIL TURNAMEN').slice(0,42),W/2,160);
+ x.fillStyle='#d9e5ef';x.font='26px Roboto,Arial';x.fillText(String(subtitle||'').slice(0,58),W/2,215);
+ let y=270;rows.forEach((row,i)=>{x.fillStyle=i%2?'#222d39':'#273442';x.fillRect(54,y,W-108,76);x.fillStyle='#f3f6f8';x.textAlign='left';x.font='bold 25px Roboto,Arial';x.fillText(String(row).slice(0,64),82,y+48);y+=88});
+ x.textAlign='center';x.fillStyle='#9eb2c4';x.font='18px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW',W/2,H-55);return c;
 }
-async function sendResultPages(pages,baseName,message){
- const files=[];
- for(let i=0;i<pages.length;i++){
-  const blob=await new Promise(resolve=>pages[i].toBlob(resolve,'image/jpeg',.96));
-  if(!blob)throw new Error('Gagal membuat salah satu halaman gambar.');
-  files.push(new File([blob],`${baseName}-${String(i+1).padStart(2,'0')}-dari-${pages.length}.jpg`,{type:'image/jpeg'}));
- }
- try{if(navigator.share&&navigator.canShare&&navigator.canShare({files})){await navigator.share({title:baseName.replace(/-/g,' '),text:message,files});toast(`${files.length} gambar siap dibagikan. Pilih WhatsApp.`);return}}catch(e){if(e.name==='AbortError')return}
- files.forEach(f=>download(f,f.name));
- window.open(`https://wa.me/?text=${encodeURIComponent(message+'\n'+files.length+' gambar telah diunduh. Lampirkan semuanya di WhatsApp.')}`,'_blank','noopener');
- toast(`${files.length} gambar diunduh. Lampirkan semuanya di WhatsApp.`);
-}
-function shareCanvasPages(title,subtitle,rows,perPage=8){
- const pages=[];for(let i=0;i<rows.length;i+=perPage){const part=rows.slice(i,i+perPage);const c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');
-  const g=x.createLinearGradient(0,0,1080,1920);g.addColorStop(0,'#171c24');g.addColorStop(1,'#263747');x.fillStyle=g;x.fillRect(0,0,1080,1920);
-  x.fillStyle='#79c8f2';x.textAlign='center';x.font='bold 34px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW',540,105);
-  x.fillStyle='#fff';x.font='bold 42px Roboto,Arial';x.fillText(String(title).slice(0,38),540,190);
-  x.fillStyle='#f4d77b';x.font='26px Roboto,Arial';x.fillText(String(subtitle).slice(0,60),540,250);
-  x.fillStyle='#a9c1d3';x.font='22px Roboto,Arial';x.fillText(`HALAMAN ${pages.length+1} • ${Math.ceil(rows.length/perPage)}`,540,300);
-  part.forEach((row,j)=>{let y=355+j*180;x.fillStyle=j%2?'#263747':'#202b38';x.beginPath();x.roundRect(55,y,970,150,22);x.fill();x.fillStyle='#fff';x.textAlign='left';x.font='bold 27px Roboto,Arial';let txt=String(row);let lines=[];while(txt.length>0){let cut=txt.length;while(cut>1&&x.measureText(txt.slice(0,cut)).width>890)cut--;lines.push(txt.slice(0,cut));txt=txt.slice(cut);if(lines.length===3)break}lines.forEach((line,k)=>x.fillText(line,88,y+55+k*37));});
-  x.textAlign='center';x.fillStyle='#79c8f2';x.font='22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • FULL HD 1080 × 1920',540,1860);pages.push(c);
- }return pages;
-}
-async function sendResultImage(canvas,filename,message){
- const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.98));
- if(!blob){toast('Gagal membuat gambar hasil.');return}
- const file=new File([blob],filename,{type:'image/jpeg'});
- try{
-  if(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]})){
-   await navigator.share({title:filename.replace(/-/g,' '),text:message,files:[file]});
-   toast('Pilih WhatsApp untuk mengirim gambar hasil turnamen.');return;
-  }
- }catch(e){if(e.name==='AbortError')return}
- download(file,filename);
- window.open(`https://wa.me/?text=${encodeURIComponent(message+'\\nGambar sudah diunduh. Silakan lampirkan di WhatsApp.')}`,'_blank','noopener');
- toast('Gambar hasil diunduh. Lampirkan pada WhatsApp.');
+async function canvasFile(canvas,name){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.96));if(!blob)throw Error('Gagal membuat gambar.');return new File([blob],name,{type:'image/jpeg'})}
+async function shareImageSet(files,title,message){
+ try{if(navigator.share&&navigator.canShare&&navigator.canShare({files})){await navigator.share({title,text:message,files});toast('Pilih WhatsApp untuk membagikan seluruh gambar dan satu pesan.');return}}
+ catch(e){if(e.name==='AbortError')return}
+ files.forEach(f=>download(f,f.name));window.open(`https://wa.me/?text=${encodeURIComponent(message+'\n\nLampirkan seluruh gambar yang telah diunduh secara berurutan.')}`,'_blank','noopener');toast(`${files.length} gambar diunduh. Pesan WhatsApp dibuka satu kali.`);
 }
 function currentLeagueTable(){
- const t=active();if(!t)return [];
- let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean).map(club=>({club,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
- db.matches.filter(m=>m.tournamentId===t.id&&m.round?.startsWith('Pekan')&&m.played).forEach(m=>{
-  const a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)return;
-  a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;
-  if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}
- });
+ const t=active();if(!t)return [];let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean).map(club=>({club,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
+ db.matches.filter(m=>m.tournamentId===t.id&&m.round?.startsWith('Pekan')&&m.played).forEach(m=>{const a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)return;a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}});
  return teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.name.localeCompare(b.club.name));
 }
 async function shareLeagueTable(){
- const t=active(),teams=currentLeagueTable();if(!t||!teams.length){toast('Data klasemen belum tersedia.');return}
- const rows=teams.map((v,i)=>`${i+1}. ${v.club.name} | MP ${v.mp} | M ${v.w} | S ${v.d} | K ${v.l} | GM ${v.gf} | GK ${v.ga} | SG ${v.gd} | PTS ${v.pts}`);
- await sendResultPages(shareCanvasPages(`KLASEMEN LIGA • ${t.name}`,`${teams.length} KLUB • M 3 POIN • S 1 POIN`,rows,8),`Klasemen-Liga-${Date.now()}`,`🏆 ${t.name}\nKlasemen lengkap ${teams.length} klub terlampir.`);
+ const t=active(),teams=currentLeagueTable();if(!t||!teams.length){toast('Data klasemen belum tersedia.');return}const per=12,pages=Math.ceil(teams.length/per),files=[];
+ for(let pg=0;pg<pages;pg++){const chunk=teams.slice(pg*per,(pg+1)*per),rows=chunk.map((v,i)=>`${pg*per+i+1}. ${v.club.name} | T ${v.mp} M ${v.w} S ${v.d} K ${v.l} GM ${v.gf} GK ${v.ga} SG ${v.gd} POIN ${v.pts}`);const c=shareCanvasBase(`KLASEMEN LIGA • ${t.name}`,`HALAMAN ${pg+1}/${pages} • ${teams.length} KLUB`,rows);files.push(await canvasFile(c,`Klasemen-${pg+1}-dari-${pages}.jpg`))}
+ await shareImageSet(files,'Klasemen Liga',`🏆 ${t.name}\nKLASEMEN LIGA\n${teams.length} klub ditampilkan lengkap dalam ${pages} gambar.`);
 }
-
 async function shareGroupChart(){
- const t=active(),d=getDraw();if(!t||!d){toast('Hasil pengundian grup belum tersedia.');return}
- const rows=[];d.groups.forEach(g=>{rows.push(`${g.name}  •  DAFTAR KLUB & KLASEMEN`);tableStandings(g).forEach((x,i)=>rows.push(`${i+1}. ${x.club.name}   MP ${x.mp}   M ${x.w}   S ${x.d}   K ${x.l}   SG ${x.gd}   PTS ${x.pts}`))});
- await sendResultImage(shareCanvasBase(`BAGAN FASE GRUP • ${t.name}`,'PEMBAGIAN GRUP DAN KLASEMEN TERKINI',rows),`Bagan-Fase-Grup-${Date.now()}.jpg`,`🏆 ${t.name}\\nBagan grup dan klasemen terbaru terlampir.`);
+ const t=active(),d=getDraw();if(!t||!d){toast('Hasil pengundian grup belum tersedia.');return}const per=2,pages=Math.ceil(d.groups.length/per),files=[];
+ for(let pg=0;pg<pages;pg++){const groups=d.groups.slice(pg*per,(pg+1)*per),c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');x.fillStyle='#171c24';x.fillRect(0,0,1080,1920);x.fillStyle='#79c8f2';x.fillRect(0,0,1080,14);x.textAlign='center';x.fillStyle='#a9b8c7';x.font='22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • HASIL FASE GRUP',540,76);x.fillStyle='#f4d77b';x.font='bold 46px Roboto,Arial';x.fillText(t.name.slice(0,35),540,140);x.fillStyle='#d9e5ef';x.font='24px Roboto,Arial';x.fillText(`KLASEMEN • HALAMAN ${pg+1}/${pages}`,540,195);
+ let y=245;groups.forEach(g=>{x.fillStyle='#273442';x.fillRect(45,y,990,62);x.fillStyle='#f4d77b';x.font='bold 30px Roboto,Arial';x.textAlign='center';x.fillText(g.name.toUpperCase(),540,y+41);y+=70;x.fillStyle='#79c8f2';x.fillRect(45,y,990,52);x.fillStyle='#17212c';x.font='bold 19px Roboto,Arial';let heads=['#','TIM','T','M','S','K','SG','POIN'],xs=[78,155,675,755,825,895,960,1010];heads.forEach((h,i)=>{x.textAlign=i===1?'left':'center';x.fillText(h,xs[i],y+34)});y+=52;tableStandings(g).forEach((v,i)=>{x.fillStyle=i%2?'#222d39':'#f4f7fa';x.fillRect(45,y,990,66);x.fillStyle=i%2?'#f4f7fa':'#1b2733';x.font='22px Roboto,Arial';[String(i+1),v.club.name,String(v.mp),String(v.w),String(v.d),String(v.l),String(v.gd),String(v.pts)].forEach((val,j)=>{x.textAlign=j===1?'left':'center';x.fillText(val.length>25?val.slice(0,23)+'…':val,xs[j],y+42)});y+=66});y+=34});x.textAlign='center';x.fillStyle='#a9b8c7';x.font='18px Roboto,Arial';x.fillText('T: TANDING • M: MENANG • S: SERI • K: KALAH • SG: SELISIH GOL • POIN',540,1850);files.push(await canvasFile(c,`Klasemen-Grup-${pg+1}-dari-${pages}.jpg`))}
+ await shareImageSet(files,'Klasemen Fase Grup',`🏆 ${t.name}\nHASIL & KLASEMEN SELURUH GRUP\n${d.groups.length} grup ditampilkan lengkap dalam ${pages} gambar.`);
 }
 async function shareKOChart(){
- const t=active();if(!t)return;
- const matches=db.matches.filter(m=>m.tournamentId===t.id&&!m.group&&m.round).sort((a,b)=>(a.roundIndex??0)-(b.roundIndex??0)||(a.matchNo||0)-(b.matchNo||0));
- if(!matches.length){toast('Bagan knockout belum dibuat.');return}
- const rounds=[...new Set(matches.map(m=>m.roundIndex??0))].sort((a,b)=>a-b),rows=[];
- rounds.forEach(ri=>{const roundMatches=matches.filter(m=>(m.roundIndex??0)===ri);rows.push(`🏆 ${roundMatches[0]?.round||'BABAK '+(ri+1)}`);roundMatches.forEach((m,i)=>{
-  const a=db.clubs.find(c=>c.id===m.home)?.name||'Menunggu pemenang',b=db.clubs.find(c=>c.id===m.away)?.name||'Menunggu pemenang',winner=db.clubs.find(c=>c.id===m.winnerId)?.name;
-  rows.push(`${i+1}. ${a}  ${m.played?m.hs:'-'} VS ${m.played?m.as:'-'}  ${b}${winner?' • LOLOS: '+winner:''}`);
- })});
- await sendResultImage(shareCanvasBase(`BAGAN KNOCKOUT • ${t.name}`,'PERJALANAN MENUJU FINAL',rows),`Bagan-Knockout-${Date.now()}.jpg`,`🏆 ${t.name}\\nBagan knockout dari babak awal sampai final terlampir.`);
+ const t=active();if(!t)return;const matches=db.matches.filter(m=>m.tournamentId===t.id&&!m.group&&m.round).sort((a,b)=>(a.roundIndex??0)-(b.roundIndex??0)||(a.matchNo||0)-(b.matchNo||0));if(!matches.length){toast('Bagan knockout belum dibuat.');return}
+ const per=4,pages=Math.ceil(matches.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=matches.slice(pg*per,(pg+1)*per),rows=chunk.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home)?.name||'Menunggu pemenang',b=db.clubs.find(c=>c.id===m.away)?.name||'Menunggu pemenang',win=db.clubs.find(c=>c.id===m.winnerId)?.name;return `${m.round||'Knockout'} • ${i+1}. ${a} ${m.played?m.hs:'-'} VS ${m.played?m.as:'-'} ${b}${win?' • LOLOS '+win:''}`});files.push(await canvasFile(shareCanvasBase(`BAGAN KNOCKOUT • ${t.name}`,`HALAMAN ${pg+1}/${pages} • ${matches.length} PERTANDINGAN`,rows),`Knockout-${pg+1}-dari-${pages}.jpg`))}
+ await shareImageSet(files,'Bagan Knockout',`🏆 ${t.name}\nBAGAN KNOCKOUT\nSeluruh babak dan pertandingan dilampirkan dalam ${pages} gambar.`);
 }
 async function shareMatchday(round){
- const t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id&&(m.roundIndex??0)===Number(round)).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));
- if(!ms.length){toast('Pertandingan pada Matchday ini tidak ditemukan.');return}
- const roundNo=Number(round)+1,pages=[];const perPage=4;
- for(let offset=0;offset<ms.length;offset+=perPage){const subset=ms.slice(offset,offset+perPage),canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1920;const x=canvas.getContext('2d');
-  const bg=x.createLinearGradient(0,0,1080,1920);bg.addColorStop(0,'#171c24');bg.addColorStop(1,'#263747');x.fillStyle=bg;x.fillRect(0,0,1080,1920);
-  x.textAlign='center';x.fillStyle='#79c8f2';x.font='bold 34px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW',540,100);
-  x.fillStyle='#fff';x.font='bold 48px Roboto,Arial';x.fillText(String(t.name).slice(0,32),540,185);
-  x.fillStyle='#f4d77b';x.font='bold 42px Roboto,Arial';x.fillText(`MATCH DAY ${roundNo}`,540,260);
-  x.fillStyle='#b7c9d8';x.font='24px Roboto,Arial';x.fillText(`PERTANDINGAN ${offset+1}–${offset+subset.length} DARI ${ms.length}`,540,315);
-  subset.forEach((m,i)=>{const y=370+i*350,a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);x.fillStyle='#202b38';x.beginPath();x.roundRect(55,y,970,310,25);x.fill();x.fillStyle='#79c8f2';x.font='bold 23px Roboto,Arial';x.fillText(`${m.group?m.group+' • ':''}PERTANDINGAN ${offset+i+1}`,540,y+48);x.fillStyle='#fff';x.font='bold 32px Roboto,Arial';x.fillText((a?.name||'Menunggu klub').slice(0,22),300,y+135);x.fillStyle='#79c8f2';x.font='bold 42px Roboto,Arial';x.fillText('VS',540,y+135);x.fillStyle='#fff';x.font='bold 32px Roboto,Arial';x.fillText((b?.name||'Menunggu klub').slice(0,22),780,y+135);x.fillStyle='#f4d77b';x.font='bold 24px Roboto,Arial';x.fillText(m.played?`SKOR ${m.hs} - ${m.as}`:'BELUM DIMAINKAN',540,y+205);x.fillStyle='#b7c9d8';x.font='20px Roboto,Arial';x.fillText([m.date?fmtDate(m.date):'',m.time||'',m.venue||''].filter(Boolean).join(' • ')||'Jadwal pertandingan',540,y+260)});
-  x.fillStyle='#79c8f2';x.font='22px Roboto,Arial';x.fillText(`HALAMAN ${pages.length+1} • ${Math.ceil(ms.length/perPage)}`,540,1845);pages.push(canvas);
- }
- const prefix=db.settings.waPrefix||'62',normalize=n=>{let v=String(n||'').replace(/\D/g,'');if(v.startsWith('0'))v=prefix+v.slice(1);return v||'Nomor HP belum ditambahkan'};
- const textLines=[`⚽ MATCH DAY ${roundNo}`,`🏆 ${t.name}`,''];ms.forEach((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);textLines.push(`${i+1}. ${a?.name||'Tim A'} vs ${b?.name||'Tim B'}`,`Nomor HP ${a?.name||'Tim A'}: ${normalize(a?.phone)}`,`Nomor HP ${b?.name||'Tim B'}: ${normalize(b?.phone)}`,'Selamat bertanding, hubungi lawan main, good luck!','')});
- const message=textLines.join('\n');await sendResultPages(pages,`Jadwal-Matchday-${roundNo}-${Date.now()}`,message);
+ const t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id&&(m.roundIndex??0)===Number(round)).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));if(!ms.length){toast('Pertandingan pada Matchday ini tidak ditemukan.');return}
+ const roundNo=Number(round)+1,per=4,pages=Math.ceil(ms.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=ms.slice(pg*per,(pg+1)*per),c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');x.fillStyle='#171c24';x.fillRect(0,0,1080,1920);x.fillStyle='#79c8f2';x.fillRect(0,0,1080,14);x.textAlign='center';x.fillStyle='#a9b8c7';x.font='22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • JADWAL PERTANDINGAN',540,75);x.fillStyle='#f4d77b';x.font='bold 48px Roboto,Arial';x.fillText(String(t.name).slice(0,35),540,145);x.fillStyle='#79c8f2';x.font='bold 36px Roboto,Arial';x.fillText(`MATCH DAY ${roundNo}`,540,210);x.fillStyle='#d9e5ef';x.font='22px Roboto,Arial';x.fillText(`HALAMAN ${pg+1}/${pages} • ${ms.length} PERTANDINGAN`,540,255);
+ chunk.forEach((m,i)=>{const y=300+i*380,a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);x.fillStyle='#263442';x.beginPath();x.roundRect(48,y,984,340,24);x.fill();x.fillStyle='#f4d77b';x.font='bold 22px Roboto,Arial';x.textAlign='center';x.fillText(`${m.group?m.group+' • ':''}PERTANDINGAN ${pg*per+i+1}`,540,y+48);x.fillStyle='#f4f7fa';x.font='bold 34px Roboto,Arial';x.fillText((a?.name||'Menunggu klub').slice(0,28),540,y+120);x.fillStyle='#79c8f2';x.font='bold 42px Roboto,Arial';x.fillText('VS',540,y+180);x.fillStyle='#f4f7fa';x.font='bold 34px Roboto,Arial';x.fillText((b?.name||'Menunggu klub').slice(0,28),540,y+235);x.fillStyle='#b7c6d3';x.font='22px Roboto,Arial';x.fillText(m.played?`SKOR ${m.hs} - ${m.as}`:'BELUM DIMAINKAN',540,y+290)});x.fillStyle='#a9b8c7';x.font='18px Roboto,Arial';x.textAlign='center';x.fillText('FOOTBALL CLUB DRAW',540,1870);files.push(await canvasFile(c,`Matchday-${roundNo}-${pg+1}-dari-${pages}.jpg`))}
+ const lines=ms.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `${i+1}. ${a?.name||'Klub A'} vs ${b?.name||'Klub B'}\n   HP ${a?.name||'Tim A'}: ${a?.phone||'Belum ditambahkan'}\n   HP ${b?.name||'Tim B'}: ${b?.phone||'Belum ditambahkan'}`});const message=`🏆 ${t.name}\n⚽ JADWAL PERTANDINGAN — MATCH DAY ${roundNo}\n\n${lines.join('\n\n')}\n\nSelamat bertanding! Silakan hubungi lawan main untuk koordinasi.\nGood luck! ⚽`;
+ await shareImageSet(files,`Jadwal Match Day ${roundNo}`,message);
 }
 let leagueAnimationToken=0;
 function animateLeague(){
@@ -449,7 +396,7 @@ function animateLeague(){
  };
  next();
 }
-function shareMatch(id){let m=db.matches.find(x=>x.id===id),a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away),t=active(),prefix=db.settings.waPrefix||'62',norm=n=>{let v=String(n||'').replace(/\D/g,'');if(v.startsWith('0'))v=prefix+v.slice(1);return v||'Nomor HP belum ditambahkan'};let msg=`⚽ MATCH DAY ${(m.roundIndex??0)+1}\n🏆 ${t?.name||'Jadwal Pertandingan'}\n\n${a?.name||'Tim A'} vs ${b?.name||'Tim B'}\nNomor HP ${a?.name||'Tim A'}: ${norm(a?.phone)}\nNomor HP ${b?.name||'Tim B'}: ${norm(b?.phone)}\nTanggal: ${fmtDate(m.date)}\nJam: ${m.time||'-'}\nVenue: ${m.venue||'-'}\n\nSelamat bertanding, hubungi lawan main, good luck!`;let phone=(a?.phone||'').replace(/\D/g,'');if(phone.startsWith('0'))phone=prefix+phone.slice(1);let url=phone?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;window.open(url,'_blank','noopener')}
+function shareMatch(id){let m=db.matches.find(x=>x.id===id),a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away),t=active();let msg=`⚽ ${t?.name||'Jadwal Pertandingan'}\n${a?.name||'TBD'} vs ${b?.name||'TBD'}\nTanggal: ${fmtDate(m.date)}\nJam: ${m.time||'-'}\nVenue: ${m.venue||'-'}\n${m.group||m.round||''}\n\nInformasi dari FOOTBALL CLUB DRAW`;let phone=(a?.phone||'').replace(/\D/g,'');let prefix=db.settings.waPrefix||'62';if(phone.startsWith('0'))phone=prefix+phone.slice(1);let url=phone?`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`:`https://wa.me/?text=${encodeURIComponent(msg)}`;window.open(url,'_blank','noopener')}
 
 async function encodeCanvasVideo(canvas, paintFrames, filename, secondsPerFrame=1.5){
  const wait=ms=>new Promise(r=>setTimeout(r,ms));
