@@ -100,3 +100,10 @@ Saat membuat turnamen, pilih **Liga penuh (round-robin)**. Buat jadwal liga untu
 - Gambar klasemen liga menggunakan tabel vertikal yang mudah dibaca.
 - Ukuran tipografi antarmuka diperbesar untuk aksesibilitas.
 - Tombol Instal Aplikasi di header dihilangkan; manifest dan service worker PWA tetap dipertahankan.
+
+
+## Revisi 06
+- Gambar klasemen liga menggunakan kanvas lebih lebar dan tinggi dinamis, menampilkan seluruh klub serta seluruh kolom: #, Klub, MP, M, S, K, GM, GK, SG, PTS.
+- Jadwal fase grup disusun round-robin per grup dan dikelompokkan lintas grup berdasarkan Matchday (misalnya Matchday 1 memuat Grup A, B, C, dan D).
+- Pertandingan fase grup lama yang belum memiliki indeks Matchday dipetakan otomatis ke urutan round-robin saat halaman jadwal dibuka.
+- Cache service worker diperbarui agar browser mengambil file revisi terbaru.
