@@ -393,13 +393,9 @@ async function shareActualPage(kind){
 }
 
 function shareCanvasBase(title,subtitle,rows){
- const W=1080,H=1920,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
- x.fillStyle='#171c24';x.fillRect(0,0,W,H);x.fillStyle='#79c8f2';x.fillRect(0,0,W,14);
- x.textAlign='center';x.fillStyle='#a9b8c7';x.font='500 22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • TOURNAMENT MANAGEMENT',W/2,85);
- x.fillStyle='#f4d77b';x.font='bold 48px Roboto,Arial';x.fillText(String(title||'HASIL TURNAMEN').slice(0,42),W/2,160);
- x.fillStyle='#d9e5ef';x.font='26px Roboto,Arial';x.fillText(String(subtitle||'').slice(0,58),W/2,215);
- let y=270;rows.forEach((row,i)=>{x.fillStyle=i%2?'#222d39':'#273442';x.fillRect(54,y,W-108,76);x.fillStyle='#f3f6f8';x.textAlign='left';x.font='bold 25px Roboto,Arial';x.fillText(String(row).slice(0,64),82,y+48);y+=88});
- x.textAlign='center';x.fillStyle='#9eb2c4';x.font='18px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW',W/2,H-55);return c;
+ const W=1080,rowH=82,H=Math.max(1200,300+rows.length*rowH+100),c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');drawShareBackground(x,W,H,title,subtitle);
+ let y=245;rows.forEach((row,i)=>{x.fillStyle=i%2?'#1b2a37':'#223544';x.strokeStyle='#286f91';x.lineWidth=1;roundRect(x,54,y,W-108,68,12,true,true);x.fillStyle='#f2f6f8';x.textAlign='left';x.font='700 23px Roboto,Arial';wrapCanvasText(x,row,82,y+42,W-165,28,2);y+=rowH});
+ x.textAlign='center';x.fillStyle='#f3d45d';x.font='600 17px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW',W/2,H-38);return c;
 }
 async function canvasFile(canvas,name){const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/jpeg',.96));if(!blob)throw Error('Gagal membuat gambar.');return new File([blob],name,{type:'image/jpeg'})}
 async function shareImageSet(files,title,message){
@@ -419,8 +415,8 @@ async function shareLeagueTable(){
 }
 async function shareGroupChart(){
  const t=active(),d=getDraw();if(!t||!d){toast('Hasil pengundian grup belum tersedia.');return}const per=2,pages=Math.ceil(d.groups.length/per),files=[];
- for(let pg=0;pg<pages;pg++){const groups=d.groups.slice(pg*per,(pg+1)*per),c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');x.fillStyle='#171c24';x.fillRect(0,0,1080,1920);x.fillStyle='#79c8f2';x.fillRect(0,0,1080,14);x.textAlign='center';x.fillStyle='#a9b8c7';x.font='22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • HASIL FASE GRUP',540,76);x.fillStyle='#f4d77b';x.font='bold 46px Roboto,Arial';x.fillText(t.name.slice(0,35),540,140);x.fillStyle='#d9e5ef';x.font='24px Roboto,Arial';x.fillText(`KLASEMEN • HALAMAN ${pg+1}/${pages}`,540,195);
- let y=245;groups.forEach(g=>{x.fillStyle='#273442';x.fillRect(45,y,990,62);x.fillStyle='#f4d77b';x.font='bold 30px Roboto,Arial';x.textAlign='center';x.fillText(g.name.toUpperCase(),540,y+41);y+=70;x.fillStyle='#79c8f2';x.fillRect(45,y,990,52);x.fillStyle='#17212c';x.font='bold 19px Roboto,Arial';let heads=['#','TIM','MP','M','S','K','GM','GK','SG','PTS'],xs=[70,145,570,650,720,790,860,925,985,1030];heads.forEach((h,i)=>{x.textAlign=i===1?'left':'center';x.fillText(h,xs[i],y+34)});y+=52;tableStandings(g).forEach((v,i)=>{x.fillStyle=i%2?'#222d39':'#f4f7fa';x.fillRect(45,y,990,66);x.fillStyle=i%2?'#f4f7fa':'#1b2733';x.font='22px Roboto,Arial';[String(i+1),v.club.name,String(v.mp),String(v.w),String(v.d),String(v.l),String(v.gf),String(v.ga),String(v.gd),String(v.pts)].forEach((val,j)=>{x.textAlign=j===1?'left':'center';x.fillText(val.length>25?val.slice(0,23)+'…':val,xs[j],y+42)});y+=66});y+=34});x.textAlign='center';x.fillStyle='#a9b8c7';x.font='18px Roboto,Arial';x.fillText('MP: MAIN • M: MENANG • S: SERI • K: KALAH • GM: GOL MEMASUKKAN • GK: GOL KEMASUKAN • SG: SELISIH GOL • PTS: POIN',540,1850);files.push(await canvasFile(c,`Klasemen-Grup-${pg+1}-dari-${pages}.jpg`))}
+ for(let pg=0;pg<pages;pg++){const groups=d.groups.slice(pg*per,(pg+1)*per),c=document.createElement('canvas');c.width=1080;c.height=1920;const x=c.getContext('2d');x.fillStyle='#111820';x.fillRect(0,0,1080,1920);const bg=x.createRadialGradient(540,0,10,540,700,1500);bg.addColorStop(0,'#26394a');bg.addColorStop(1,'#10171e');x.fillStyle=bg;x.fillRect(0,0,1080,1920);x.fillStyle='#42bce9';x.fillRect(0,0,1080,12);x.fillStyle='#f4d35e';x.fillRect(0,12,1080,4);x.textAlign='center';x.fillStyle='#9dcce0';x.font='600 22px Roboto,Arial';x.fillText('FOOTBALL CLUB DRAW • HASIL FASE GRUP',540,76);x.fillStyle='#f5d45e';x.font='bold 46px Roboto,Arial';x.fillText(t.name.slice(0,35),540,140);x.fillStyle='#d9e5ef';x.font='24px Roboto,Arial';x.fillText(`KLASEMEN • HALAMAN ${pg+1}/${pages}`,540,195);
+ let y=245;groups.forEach(g=>{x.fillStyle='#203241';x.fillRect(45,y,990,62);x.strokeStyle='#279bc9';x.strokeRect(45,y,990,62);x.fillStyle='#f4d77b';x.font='bold 30px Roboto,Arial';x.textAlign='center';x.fillText(g.name.toUpperCase(),540,y+41);y+=70;x.fillStyle='#79c8f2';x.fillRect(45,y,990,52);x.fillStyle='#17212c';x.font='bold 19px Roboto,Arial';let heads=['#','TIM','MP','M','S','K','GM','GK','SG','PTS'],xs=[70,145,570,650,720,790,860,925,985,1030];heads.forEach((h,i)=>{x.textAlign=i===1?'left':'center';x.fillText(h,xs[i],y+34)});y+=52;tableStandings(g).forEach((v,i)=>{x.fillStyle=i%2?'#222d39':'#f4f7fa';x.fillRect(45,y,990,66);x.fillStyle=i%2?'#f4f7fa':'#1b2733';x.font='22px Roboto,Arial';[String(i+1),v.club.name,String(v.mp),String(v.w),String(v.d),String(v.l),String(v.gf),String(v.ga),String(v.gd),String(v.pts)].forEach((val,j)=>{x.textAlign=j===1?'left':'center';x.fillText(val.length>25?val.slice(0,23)+'…':val,xs[j],y+42)});y+=66});y+=34});x.textAlign='center';x.fillStyle='#a9b8c7';x.font='18px Roboto,Arial';x.fillText('MP: MAIN • M: MENANG • S: SERI • K: KALAH • GM: GOL MEMASUKKAN • GK: GOL KEMASUKAN • SG: SELISIH GOL • PTS: POIN',540,1850);files.push(await canvasFile(c,`Klasemen-Grup-${pg+1}-dari-${pages}.jpg`))}
  await shareImageSet(files,'Klasemen Fase Grup',`🏆 ${t.name}\nHASIL & KLASEMEN SELURUH GRUP\n${d.groups.length} grup ditampilkan lengkap dalam ${pages} gambar.`);
 }
 async function shareKOChart(){
@@ -428,26 +424,38 @@ async function shareKOChart(){
  const per=4,pages=Math.ceil(matches.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=matches.slice(pg*per,(pg+1)*per),rows=chunk.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home)?.name||'Menunggu pemenang',b=db.clubs.find(c=>c.id===m.away)?.name||'Menunggu pemenang',win=db.clubs.find(c=>c.id===m.winnerId)?.name;return `${m.round||'Knockout'} • ${i+1}. ${a} ${m.played&&m.hs!=null?m.hs:'-'} VS ${m.played&&m.as!=null?m.as:'-'} ${b}${win?' • LOLOS '+win:''}`});files.push(await canvasFile(shareCanvasBase(`BAGAN KNOCKOUT • ${t.name}`,`HALAMAN ${pg+1}/${pages} • ${matches.length} PERTANDINGAN`,rows),`Knockout-${pg+1}-dari-${pages}.jpg`))}
  await shareImageSet(files,'Bagan Knockout',`🏆 ${t.name}\nBAGAN KNOCKOUT\nSeluruh babak dan pertandingan dilampirkan dalam ${pages} gambar.`);
 }
-async function shareMatchday(round){
- const t=active(),target=document.querySelector(`.league-matchday .league-fixtures[data-matchday="${CSS.escape(String(round))}"]`)?.closest('.league-matchday');
- if(!t||!target){toast('Bagian Matchday yang dipilih tidak ditemukan.');return}
- const btn=document.querySelector(`[data-action="shareMatchday"][data-round="${CSS.escape(String(round))}"]`);
- if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Menyiapkan HD+…'}
- try{
-  const html2canvas=await loadHtml2Canvas();if(document.fonts?.ready)await document.fonts.ready;
-  await Promise.all([...target.querySelectorAll('img')].map(img=>img.complete?Promise.resolve():new Promise(resolve=>{img.onload=img.onerror=resolve;setTimeout(resolve,2000)})));
-  const canvas=await html2canvas(target,{backgroundColor:'#171c24',scale:3,useCORS:true,allowTaint:false,logging:false,scrollX:0,scrollY:0,onclone:doc=>{
-   const el=doc.querySelector('.league-matchday');if(el){el.style.width=target.getBoundingClientRect().width+'px';el.style.height='auto';el.style.overflow='visible'}
-   doc.querySelectorAll('.league-matchday button,.league-matchday .actions,[data-action="editScore"]').forEach(x=>x.style.setProperty('display','none','important'));
-   doc.querySelectorAll('.league-matchday .muted.tiny').forEach(x=>{if(/Jam|Waktu/i.test(x.textContent))x.style.display='none'});
-   doc.querySelectorAll('.league-matchday [data-fixture] .muted.tiny').forEach(x=>{x.textContent=x.textContent.replace(/\s*•\s*\d{1,2}:\d{2}.*$/,'')});
-  }});
-  const maxH=2400,pages=Math.ceil(canvas.height/maxH),files=[];
-  for(let i=0;i<pages;i++){const y=i*maxH,h=Math.min(maxH,canvas.height-y),part=document.createElement('canvas');part.width=canvas.width;part.height=h;part.getContext('2d').drawImage(canvas,0,y,canvas.width,h,0,0,canvas.width,h);const blob=await new Promise(resolve=>part.toBlob(resolve,'image/png'));if(!blob)throw Error('Gagal membuat PNG.');files.push(new File([blob],`Jadwal-MD-${Number(round)+1}-${i+1}-dari-${pages}.png`,{type:'image/png'}))}
-  await shareImageSet(files,`Jadwal MD ${Number(round)+1}`,`⚽ ${t.name}\nJADWAL PERTANDINGAN • MATCHDAY ${Number(round)+1}\nSelamat bertanding! ⚽`);
- }catch(err){console.error(err);toast(err.message||'Gagal mengambil gambar Matchday.')}
- finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Bagikan MD'}}
+function waPhone(club){let raw=String(club?.phone||'').replace(/\D/g,'');const prefix=String(db.settings.waPrefix||'62').replace(/\D/g,'');if(raw.startsWith('0'))raw=prefix+raw.slice(1);else if(raw&&!raw.startsWith(prefix)&&raw.length>=9)raw=prefix+raw;return raw||'Belum tersedia'}
+function wrapCanvasText(ctx,text,x,y,maxWidth,lineHeight,maxLines=2){const words=String(text||'').split(/\s+/);let line='',lines=[];for(const word of words){const test=line?line+' '+word:word;if(ctx.measureText(test).width>maxWidth&&line){lines.push(line);line=word}else line=test}if(line)lines.push(line);lines=lines.slice(0,maxLines);lines.forEach((v,i)=>ctx.fillText(v,x,y+i*lineHeight));return lines.length*lineHeight}
+function drawShareBackground(ctx,w,h,title,subtitle,pageLabel=''){
+ ctx.fillStyle='#111820';ctx.fillRect(0,0,w,h);
+ // Subtle stadium atmosphere, intentionally restrained to match the approved reference.
+ const g=ctx.createRadialGradient(w*.5,0,10,w*.5,h*.35,h*.8);g.addColorStop(0,'#26394a');g.addColorStop(.55,'#17232e');g.addColorStop(1,'#10171e');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+ ctx.fillStyle='#42bce9';ctx.fillRect(0,0,w,12);ctx.fillStyle='#f4d35e';ctx.fillRect(0,12,w,4);
+ ctx.textAlign='center';ctx.fillStyle='#9dcce0';ctx.font='600 22px Roboto,Arial';ctx.fillText('FOOTBALL CLUB DRAW',w/2,66);
+ ctx.fillStyle='#f5d45e';ctx.font='800 42px Roboto,Arial';ctx.fillText(String(title).toUpperCase(),w/2,126);
+ ctx.fillStyle='#e3edf4';ctx.font='500 23px Roboto,Arial';ctx.fillText(String(subtitle||''),w/2,168);
+ if(pageLabel){ctx.fillStyle='#6fc8ec';ctx.font='600 18px Roboto,Arial';ctx.fillText(pageLabel,w/2,204)}
 }
+function drawMatchPoster(matches,t,heading,pageNo,totalPages){
+ const W=1080,cardH=250,gap=22,top=245,H=top+matches.length*(cardH+gap)+110,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');drawShareBackground(x,W,H,heading,t.name,`HALAMAN ${pageNo}/${totalPages}`);
+ matches.forEach((m,i)=>{const y=top+i*(cardH+gap);x.fillStyle='#202f3d';x.strokeStyle='#279bc9';x.lineWidth=2;roundRect(x,48,y,W-96,cardH,20,true,true);x.fillStyle='#f4d35e';x.font='700 19px Roboto,Arial';x.textAlign='left';x.fillText(`${m.group||m.round||'PERTANDINGAN'}  •  ${String(i+1).padStart(2,'0')}`,78,y+38);
+ const a=db.clubs.find(v=>v.id===m.home),b=db.clubs.find(v=>v.id===m.away);x.textAlign='center';x.fillStyle='#f3f7fa';x.font='700 30px Roboto,Arial';x.fillText(a?.name||'Menunggu klub',W*.28,y+100);x.fillText(b?.name||'Menunggu klub',W*.72,y+100);
+ x.fillStyle='#42bce9';x.font='800 34px Roboto,Arial';x.fillText('VS',W/2,y+100);
+ x.fillStyle='#f5d45e';x.font='700 21px Roboto,Arial';x.fillText(m.date?fmtDate(m.date):'JADWAL PERTANDINGAN',W/2,y+145);
+ x.fillStyle='#9fb6c8';x.font='500 18px Roboto,Arial';x.fillText(m.venue||'FOOTBALL CLUB DRAW',W/2,y+184);
+ });x.textAlign='center';x.fillStyle='#8faabd';x.font='16px Roboto,Arial';x.fillText('OFFICIAL TOURNAMENT • FOOTBALL CLUB DRAW',W/2,H-35);return c;
+}
+function roundRect(ctx,x,y,w,h,r,fill,stroke){ctx.beginPath();ctx.roundRect(x,y,w,h,r);if(fill)ctx.fill();if(stroke)ctx.stroke()}
+async function shareMatchday(round){
+ const t=active();if(!t)return;let games=db.matches.filter(m=>m.tournamentId===t.id&&(t.format==='league'?(m.roundIndex??0)===Number(round):m.group&&(m.roundIndex??0)===Number(round))).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));
+ if(!games.length){toast('Tidak ada pertandingan pada MD yang dipilih.');return}
+ const btn=document.querySelector(`[data-action="shareMatchday"][data-round="${CSS.escape(String(round))}"]`);if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Membuat poster HD+…'}
+ try{const per=5,pages=Math.ceil(games.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=games.slice(pg*per,(pg+1)*per),canvas=drawMatchPoster(chunk,t,`JADWAL MATCHDAY ${Number(round)+1}`,pg+1,pages);files.push(await canvasFile(canvas,`Jadwal-MD-${Number(round)+1}-${pg+1}-dari-${pages}.jpg`))}
+  const caption=['⚽ FOOTBALL CLUB DRAW',`JADWAL PERTANDINGAN • ${t.name}`,`MATCHDAY ${Number(round)+1}`,'',...games.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return [`PERTANDINGAN ${i+1}`,`${a?.name||'Klub A'} vs ${b?.name||'Klub B'}`,`Nomor HP A : ${waPhone(a)}`,`Nomor HP B : ${waPhone(b)}`].join('\n')})].join('\n\n');
+  await shareImageSet(files,`Jadwal MD ${Number(round)+1}`,caption);
+ }catch(err){console.error(err);toast(err.message||'Gagal membuat poster jadwal.')}finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Bagikan MD'}}
+}
+
 let leagueAnimationToken=0;
 function animateLeague(){
  const cards=$$('.league-fixture');if(!cards.length){toast('Buat jadwal liga terlebih dahulu.');return}
