@@ -340,3 +340,130 @@ table{font-size:13px}th{font-size:12px}td{font-size:13px}
 .bracket-round .match-team{overflow-wrap:anywhere}
 .bracket-round .btn{min-height:44px}
 @media(max-width:600px){.bracket-flow{gap:18px;margin:0 -10px}.bracket-round{flex-basis:82vw;min-width:82vw}.bracket-round .match-card{padding:12px}.bracket-round .match-team{font-size:1rem}}
+
+
+/* REVISI 09 — DARK CHARCOAL / SKY BLUE / SOFT YELLOW
+   VISUAL-ONLY OVERRIDES: no application logic or data handling changed. */
+:root{
+  --bg:#202B36;
+  --panel:#2B3947;
+  --panel2:#344657;
+  --line:#46596B;
+  --text:#F8FAFC;
+  --muted:#C1CBD5;
+  --gold:#F5D978;
+  --gold2:#FFE9A3;
+  --green:#75D6A5;
+  --red:#FF9292;
+  color-scheme:dark;
+  font-family:'Roboto',Arial,sans-serif;
+  color:var(--text);
+  background:var(--bg);
+}
+html,body{font-family:'Roboto',Arial,sans-serif;background:#202B36;color:#F8FAFC}
+body{background:radial-gradient(ellipse at 82% -12%,#34495b 0,transparent 38%),#202B36}
+button,input,select,textarea{font-family:'Roboto',Arial,sans-serif}
+.sidebar{background:#18232D;border-color:#3B4B5A}
+.brand-mark{background:linear-gradient(145deg,#F5D978,#DDBE58);color:#202B36}
+.brand small{color:#F5D978}
+.side-label,.eyebrow{color:#C1CBD5}
+.nav-item{color:#D5DEE7;font-size:15px}
+.nav-item span{font-size:15px}
+.nav-item:hover,.nav-item.active{background:#29465B;color:#F5D978}
+.sidebar-foot{color:#B6C2CD;font-size:12px}
+.topbar{background:#202B36F2;border-color:#46596B}
+h1{font-family:'Roboto',Arial,sans-serif;font-size:27px;color:#F8FAFC}
+.topbar h1{font-size:25px}
+.save-state{font-size:13px;color:#75D6A5}
+.content{color:#F8FAFC}
+.stat,.panel,.card{background:#2B3947;border-color:#46596B;box-shadow:0 5px 18px #10182040}
+.stat small{color:#C1CBD5;font-size:14px}
+.stat strong{font-family:'Roboto',Arial,sans-serif;font-size:30px;color:#F8FAFC}
+.stat em{font-size:13px;color:#F5D978}
+.section-head h2,.panel h2{font-family:'Roboto',Arial,sans-serif;font-size:19px;color:#F8FAFC}
+.section-head p{font-size:15px;color:#C1CBD5}
+.hero{background:linear-gradient(115deg,#29465B,#2B3947 75%);border-color:#55B8F2}
+.hero h2{font-family:'Roboto',Arial,sans-serif;font-size:24px;color:#F8FAFC}
+.hero p{font-size:16px;color:#E0E8EF}
+.muted{color:#C1CBD5}
+.tiny{font-size:13px}
+.btn{font-size:15px;font-weight:700}
+.btn-gold{background:#55B8F2;color:#142330;border-color:#55B8F2}
+.btn-gold:hover{background:#79C9F6}
+.btn-ghost{background:#344657;border-color:#60778B;color:#F8FAFC}
+.btn-danger{background:#512F37;color:#FFD4D4;border-color:#A75D68}
+.btn-sm{font-size:13px}
+.table-wrap{border-color:#46596B}
+table{font-size:14px}
+th{background:#344657;color:#F5D978;font-size:12px}
+th,td{border-color:#46596B}
+td{color:#F1F5F9}
+.club-logo{background:#344657}
+.pill{font-size:12px;background:#3D4D5B;color:#FFE9A3}
+.pill.green{background:#214C3C;color:#A7F0C8}
+.pill.red{background:#542F38;color:#FFD0D0}
+.empty{color:#C1CBD5;font-size:15px}
+.empty b{color:#F8FAFC}
+.field label{font-size:14px;color:#E2EAF1}
+.field input,.field select,.field textarea{background:#18232D;color:#F8FAFC;border-color:#536779;font-size:16px}
+.field input::placeholder,.field textarea::placeholder{color:#AEBBC7;opacity:1}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#55B8F2;box-shadow:0 0 0 3px #55B8F233}
+.hint{font-size:13px;color:#C1CBD5}
+.group-card{background:#2B3947;border-color:#607386}
+.group-title{background:#344657;color:#F5D978;font-size:17px}
+.group-card td,.group-card th{font-size:14px}
+.draw-stage{background:radial-gradient(circle,#344D61 0,#2B3947 58%,#202B36 100%);border-color:#607386}
+.draw-stage .big,.draw-stage .group-tag{color:#F5D978}
+.draw-stage-live{background:radial-gradient(ellipse at center,#38566D 0,#2B3947 55%,#202B36 100%);border-color:#55B8F2}
+.draw-ball{background:linear-gradient(145deg,#FFE9A3,#DDBE58);box-shadow:0 0 0 10px #F5D97822,0 12px 25px #0006}
+.draw-status,.draw-group-name{color:#F5D978}
+.draw-club-name{font-family:'Roboto',Arial,sans-serif;color:#F8FAFC}
+.draw-count{color:#D5DEE7}
+.draw-progress{background:#46596B}
+.draw-progress i,.progress i{background:linear-gradient(90deg,#55B8F2,#F5D978)}
+.draw-result-row{border-color:#46596B;color:#F1F5F9}
+.draw-result-number{color:#F5D978}
+.match-card{background:#2B3947;border-color:#536779}
+.match-team{border-color:#46596B;color:#F1F5F9}
+.toast{background:#344657;border-color:#55B8F2;color:#F8FAFC;font-size:14px}
+.modal-card{background:#2B3947;color:#F8FAFC;border-color:#607386}
+.modal-head,.modal-actions{border-color:#46596B}
+.modal-head h3{font-family:'Roboto',Arial,sans-serif;font-size:19px}
+.icon-btn{background:#344657;color:#F8FAFC;font-size:17px}
+.notice{background:#3C3A2D;border-color:#8D7A43;color:#FFE9A3;font-size:14px}
+.tab{background:#344657;border-color:#536779;color:#D5DEE7;font-size:14px}
+.tab.active{background:#29465B;border-color:#55B8F2;color:#FFE9A3}
+.mobile-nav{background:#18232D;border-color:#46596B}
+.mobile-nav button{color:#C1CBD5;font-size:12px}
+.mobile-nav button.active{color:#F5D978}
+footer{color:#C1CBD5;border-color:#46596B;font-size:11px}
+footer span{color:#55B8F2}
+@media(max-width:680px){
+  .topbar h1{font-size:21px}
+  .eyebrow{font-size:11px;letter-spacing:1px;color:#C1CBD5}
+  .content{padding:15px 13px calc(24px + env(safe-area-inset-bottom))}
+  .stat{padding:13px}
+  .stat small{font-size:12px}
+  .stat strong{font-size:25px}
+  .stat em{font-size:12px}
+  .hero h2{font-size:21px}
+  .hero p{font-size:15px;line-height:1.6}
+  .section-head h2{font-size:19px}
+  .section-head p{font-size:14px}
+  .panel{padding:14px}
+  .btn{font-size:15px;min-height:44px}
+  .btn-sm{font-size:13px}
+  .field label{font-size:14px}
+  .field input,.field select,.field textarea{font-size:16px}
+  table{font-size:13px}
+  .group-card td,.group-card th{font-size:13px;padding:9px 7px}
+  .group-title{font-size:16px}
+  .draw-club-name{font-size:24px}
+  .draw-status,.draw-group-name{font-size:13px}
+  .draw-count{font-size:12px}
+  .draw-result-row{font-size:14px}
+  .draw-result-row b{font-size:13px}
+  .notice{font-size:13px}
+  .mobile-nav button{font-size:11px}
+  footer{font-size:10px}
+}
