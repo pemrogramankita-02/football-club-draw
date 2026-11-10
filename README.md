@@ -1,6 +1,3 @@
-FILE TUJUAN: README.md
-Salin seluruh isi setelah garis pemisah ke file dengan nama tujuan di atas.
-========================================================================
 # FOOTBALL CLUB DRAW v2.0 — Full Local Edition
 
 Aplikasi pengelolaan turnamen sepak bola berbasis HTML, CSS, dan JavaScript. Tidak membutuhkan backend untuk penggunaan lokal.
@@ -124,3 +121,14 @@ Saat membuat turnamen, pilih **Liga penuh (round-robin)**. Buat jadwal liga untu
 ### Catatan pengujian
 - `node --check js/app.js` berhasil.
 - Belum dilakukan pengujian visual lintas browser atau uji pengiriman WhatsApp langsung pada perangkat. Browser/OS dapat membatasi jumlah file yang dapat dibagikan sekaligus.
+
+
+## Revisi 08 — Penyempurnaan aturan kompetisi dan penghargaan
+- Klasemen grup menghitung menang 3, seri 1, kalah 0; urutan memakai poin, selisih gol, gol memasukkan, head-to-head, lalu fair play berdasarkan kartu.
+- Form input skor fase grup menyediakan pencatatan kartu kuning/merah untuk tie-breaker fair play.
+- Liga menggunakan home-away (dua putaran) sebagai default; satu putaran tetap dapat dipilih. Pengaturan jumlah klub degradasi disediakan untuk administrasi akhir musim.
+- Knockout menampilkan bracket horizontal yang dapat digeser di HP. Skor penalti disimpan terpisah dari gol pertandingan agar tidak menambah total gol klub.
+- Penghargaan Klub Tersubur menghitung total gol dari semua pertandingan turnamen. Jika seri, semua klub dengan total tertinggi ditampilkan sebagai pemenang bersama.
+- Data lama tetap memakai key LocalStorage yang sama (`fcd_full_v2`).
+
+Catatan: implementasi ini belum mencakup kalkulasi agregat dua leg otomatis atau modul promosi antar-turnamen yang memindahkan klub ke kasta lain. Pencatatan extra time menggunakan skor akhir pertandingan; pencatatan detail durasi 2x15 dan sudden-death penalti masih perlu diuji/ditambahkan pada iterasi berikutnya.
