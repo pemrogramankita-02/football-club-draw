@@ -1,4 +1,4 @@
-const CACHE='fcd-revisi-13-graphic-share';
+const CACHE='fcd-revisi-14-complete-share-posters-results-posters';
 const CORE=['./','./index.html','./manifest.json','./css/style.css','./js/app.js','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
 self.addEventListener('activate',e=>e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))));
