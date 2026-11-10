@@ -1,6 +1,3 @@
-FILE TUJUAN: js/app.js
-Salin seluruh isi setelah garis pemisah ke file dengan nama tujuan di atas.
-========================================================================
 /* FOOTBALL CLUB DRAW v2.0 — local-first tournament manager */
 (() => {
 'use strict';
@@ -100,13 +97,28 @@ function animateDraw(d){
  setTimeout(tick,350);
 }
 function getDraw(){return db.draws.find(d=>d.tournamentId===active()?.id)}
-function tableStandings(group){let teams=group.clubs.map(c=>({club:c,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));let matches=db.matches.filter(m=>m.tournamentId===active()?.id&&m.group===group.name&&m.played);for(let m of matches){let a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)continue;a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}}return teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.name.localeCompare(b.club.name))}
-function groupsPage(){let d=getDraw(),t=active();if(t?.format==='league')return leagueStandingsPage();if(!d)return `<div class="empty"><b>Hasil pengundian belum tersedia</b>Selesaikan pengundian terlebih dahulu.</div>`;return `<div class="section-head"><div><h2>Hasil & Klasemen Grup</h2><p>Seluruh grup ditampilkan dengan statistik lengkap. Masukkan skor untuk memperbarui klasemen.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareGroupChart">Bagikan Semua Grup via WhatsApp</button><button class="btn btn-ghost" onclick="window.print()">Cetak Klasemen</button></div></div><div class="grid group-grid">${d.groups.map(g=>{let s=tableStandings(g);return `<div class="group-card"><div class="group-title">${esc(g.name)}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Tim</th><th>T</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>Poin</th></tr></thead><tbody>${s.map((x,i)=>`<tr><td>${i+1}</td><td><div class="club-cell"><img class="club-logo" src="${logo(x.club)}">${esc(x.club.name)}</div></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div></div>`}).join('')}</div>`}
+function tableStandings(group){
+ const teams=group.clubs.map(c=>({club:c,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0,yellow:0,red:0}));
+ const matches=db.matches.filter(m=>m.tournamentId===active()?.id&&m.group===group.name&&m.played);
+ for(const m of matches){
+  const a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);
+  if(!a||!b||!Number.isFinite(Number(m.hs))||!Number.isFinite(Number(m.as)))continue;
+  const hs=Number(m.hs),as=Number(m.as);a.mp++;b.mp++;a.gf+=hs;a.ga+=as;b.gf+=as;b.ga+=hs;
+  a.yellow+=Number(m.homeYellow||0);a.red+=Number(m.homeRed||0);b.yellow+=Number(m.awayYellow||0);b.red+=Number(m.awayRed||0);
+  if(hs>as){a.w++;b.l++;a.pts+=3}else if(hs<as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}
+ }
+ const h2h=(a,b)=>{const direct=matches.filter(m=>[m.home,m.away].includes(a.club.id)&&[m.home,m.away].includes(b.club.id));let ap=0,bp=0,agd=0,bgd=0,agf=0,bgf=0;direct.forEach(m=>{const hs=Number(m.hs),as=Number(m.as);let ah=m.home===a.club.id?hs:as,bh=m.home===a.club.id?as:hs;agf+=ah;bgf+=bh;agd+=ah-bh;bgd+=bh-ah;if(ah>bh)ap+=3;else if(ah===bh){ap++;bp++}else bp+=3});return bp-ap||bgd-agd||bgf-agf};
+ return teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||h2h(a,b)||(a.yellow+2*a.red)-(b.yellow+2*b.red)||a.club.name.localeCompare(b.club.name));
+}
+
+function clubGoalTotals(){const t=active();if(!t)return [];const rows=clubs().map(club=>({club,gf:0}));db.matches.filter(m=>m.tournamentId===t.id&&m.played&&m.home&&m.away&&Number.isFinite(Number(m.hs))&&Number.isFinite(Number(m.as))).forEach(m=>{const h=rows.find(x=>x.club.id===m.home),a=rows.find(x=>x.club.id===m.away);if(h)h.gf+=Number(m.hs);if(a)a.gf+=Number(m.as)});return rows.sort((a,b)=>b.gf-a.gf||a.club.name.localeCompare(b.club.name))}
+function topScoringClubPanel(){const rows=clubGoalTotals();if(!rows.length)return '';const max=rows[0].gf;return `<section class=\"panel\" style=\"margin-top:16px\"><div class=\"section-head\"><div><h2>🏆 Penghargaan Klub Tersubur</h2><p>Total gol sepanjang turnamen; gol adu penalti tidak dihitung.</p></div></div><div class=\"grid\">${rows.filter(x=>x.gf===max).map(x=>`<div class=\"stat\"><small>KLUB TERSUBUR</small><strong>${esc(x.club.name)}</strong><em>${x.gf} gol</em></div>`).join('')}</div></section>`}
+function groupsPage(){let d=getDraw(),t=active();if(t?.format==='league')return leagueStandingsPage();if(!d)return `<div class="empty"><b>Hasil pengundian belum tersedia</b>Selesaikan pengundian terlebih dahulu.</div>`;return `<div class="section-head"><div><h2>Hasil & Klasemen Grup</h2><p>Seluruh grup ditampilkan dengan statistik lengkap. Masukkan skor untuk memperbarui klasemen.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareGroupChart">Bagikan Semua Grup via WhatsApp</button><button class="btn btn-ghost" onclick="window.print()">Cetak Klasemen</button></div></div><div class="grid group-grid">${d.groups.map(g=>{let s=tableStandings(g);return `<div class="group-card"><div class="group-title">${esc(g.name)}</div><div class="table-wrap"><table><thead><tr><th>#</th><th>Tim</th><th>T</th><th>M</th><th>S</th><th>K</th><th>SG</th><th>Poin</th></tr></thead><tbody>${s.map((x,i)=>`<tr><td>${i+1}</td><td><div class="club-cell"><img class="club-logo" src="${logo(x.club)}">${esc(x.club.name)}</div></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div></div>`}).join('')}</div>${topScoringClubPanel()}`}
 function generateLeague(){
  let t=active();if(!t||t.format!=='league')return;
  let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean);
  if(teams.length<2){toast('Liga membutuhkan minimal 2 klub.');return}
- if(!confirm(`Buat jadwal liga untuk ${teams.length} klub dengan sistem ${t.legs===2?'kandang dan tandang':'satu putaran'}? Jadwal liga lama akan diganti.`))return;
+ if(!confirm(`Buat jadwal liga untuk ${teams.length} klub dengan sistem ${(t.legs||2)===2?'kandang dan tandang':'satu putaran'}? Jadwal liga lama akan diganti.`))return;
  let arr=[...teams];if(arr.length%2)arr.push(null);
  let n=arr.length,rounds=n-1,half=n/2,fixtures=[];
  for(let r=0;r<rounds;r++){
@@ -114,7 +126,7 @@ function generateLeague(){
    let home=arr[i],away=arr[n-1-i];if(!home||!away)continue;
    if((r+i)%2)[home,away]=[away,home];
    fixtures.push({id:uid(),tournamentId:t.id,home:home.id,away:away.id,round:`Pekan ${r+1}`,roundIndex:r,matchNo:fixtures.length+1,group:'',played:false,hs:null,as:null,date:'',time:'',venue:''});
-   if(t.legs===2)fixtures.push({id:uid(),tournamentId:t.id,home:away.id,away:home.id,round:`Pekan ${r+rounds+1}`,roundIndex:r+rounds,matchNo:fixtures.length+1,group:'',played:false,hs:null,as:null,date:'',time:'',venue:''});
+   if((t.legs||2)===2)fixtures.push({id:uid(),tournamentId:t.id,home:away.id,away:home.id,round:`Pekan ${r+rounds+1}`,roundIndex:r+rounds,matchNo:fixtures.length+1,group:'',played:false,hs:null,as:null,date:'',time:'',venue:''});
   }
   arr=[arr[0],arr[n-1],...arr.slice(1,n-1).reverse()];
  }
@@ -127,14 +139,14 @@ function leagueStandingsPage(){
  let matches=db.matches.filter(m=>m.tournamentId===t.id&&m.round?.startsWith('Pekan')&&m.played);
  matches.forEach(m=>{let a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)return;a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}});
  teams=teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf||a.club.name.localeCompare(b.club.name));
- return `<div class="section-head"><div><h2>Klasemen Liga</h2><p>${esc(t.name)} • Menang 3 poin, seri 1 poin.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareLeagueTable">Bagikan Klasemen via WhatsApp</button><button class="btn btn-ghost" data-go="schedule">Lihat Jadwal</button></div></div><div class="panel table-wrap"><table><thead><tr><th>#</th><th>Klub</th><th>MP</th><th>M</th><th>S</th><th>K</th><th>GM</th><th>GK</th><th>SG</th><th>PTS</th></tr></thead><tbody>${teams.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.club.name)}</b></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div>`
+ return `<div class="section-head"><div><h2>Klasemen Liga</h2><p>${esc(t.name)} • Menang 3 poin, seri 1 poin.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareLeagueTable">Bagikan Klasemen via WhatsApp</button><button class="btn btn-ghost" data-go="schedule">Lihat Jadwal</button></div></div><div class="panel table-wrap"><table><thead><tr><th>#</th><th>Klub</th><th>MP</th><th>M</th><th>S</th><th>K</th><th>GM</th><th>GK</th><th>SG</th><th>PTS</th></tr></thead><tbody>${teams.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.club.name)}</b></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div>${topScoringClubPanel()}`
 }
-function knockoutPage(){let t=active(),d=getDraw();if(t?.format==='league')return `<div class="empty"><b>Mode Liga tidak menggunakan babak knockout</b>Juara ditentukan dari klasemen akhir liga.</div>`;if(!d&&t?.format!=='knockout')return `<div class="empty"><b>Belum ada hasil undian</b>Undi klub terlebih dahulu.</div>`;let ko=db.matches.filter(m=>m.tournamentId===t.id&&!m.group&&m.round).sort((a,b)=>(a.roundIndex??0)-(b.roundIndex??0)||a.matchNo-b.matchNo);let rounds=[...new Set(ko.map(m=>m.round))].sort((a,b)=>{let x=ko.find(m=>m.round===a)?.roundIndex??0,y=ko.find(m=>m.round===b)?.roundIndex??0;return x-y});return `<div class="section-head"><div><h2>Knockout Stage</h2><p>Tim peserta diambil langsung dari Data Klub. Pemenang otomatis mengisi babak berikutnya; jumlah tim bukan pangkat dua mendapat bye.</p></div><div class="actions"><button class="btn btn-ghost" data-action="shareKOChart">Bagikan Bagan via WhatsApp</button><button class="btn btn-gold" data-action="generateKO">⚔ Buat Bagan Knockout</button></div></div>${rounds.length?`<div class="bracket">${rounds.map(r=>`<section class="panel"><h2>${esc(r)}</h2>${ko.filter(m=>m.round===r).map(m=>matchCard(m)).join('')}</section>`).join('')}</div>`:`<div class="empty"><b>Bagan belum dibuat</b>Setelah pertandingan grup selesai, buat bagan untuk mengisi slot tim lolos.</div>`}`}
+function knockoutPage(){let t=active(),d=getDraw();if(t?.format==='league')return `<div class="empty"><b>Mode Liga tidak menggunakan babak knockout</b>Juara ditentukan dari klasemen akhir liga.</div>`;if(!d&&t?.format!=='knockout')return `<div class="empty"><b>Belum ada hasil undian</b>Undi klub terlebih dahulu.</div>`;let ko=db.matches.filter(m=>m.tournamentId===t.id&&!m.group&&m.round).sort((a,b)=>(a.roundIndex??0)-(b.roundIndex??0)||a.matchNo-b.matchNo);let rounds=[...new Set(ko.map(m=>m.round))].sort((a,b)=>{let x=ko.find(m=>m.round===a)?.roundIndex??0,y=ko.find(m=>m.round===b)?.roundIndex??0;return x-y});return `<div class="section-head"><div><h2>Knockout Stage</h2><p>Bagan bertingkat. Pemenang otomatis mengisi slot babak berikutnya; geser bagan ke samping pada layar HP.</p></div><div class="actions"><button class="btn btn-ghost" data-action="shareKOChart">Bagikan Bagan via WhatsApp</button><button class="btn btn-gold" data-action="generateKO">⚔ Buat Bagan Knockout</button></div></div>${rounds.length?`<div class="bracket-flow">${rounds.map(r=>`<section class="bracket-round"><h3>${esc(r)}</h3>${ko.filter(m=>m.round===r).map(m=>matchCard(m)).join('')}</section>`).join('')}</div>`:`<div class="empty"><b>Bagan belum dibuat</b>Setelah pertandingan grup selesai, buat bagan untuk mengisi slot tim lolos.</div>`}`}
 function matchCard(m){
  let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);
  let waiting=!m.home||!m.away;
  let status=m.played?'Selesai':waiting?(m.winnerId?'Bye • otomatis lolos':'Menunggu lawan'):'Belum dimainkan';
- return `<div class="match-card"><div class="muted tiny">${esc(m.round||'Pertandingan')} • #${m.matchNo||''}</div><div class="match-team">${esc(a?.name||'Menunggu pemenang')} <b>${m.played?m.hs:'-'}</b></div><div class="match-team">${esc(b?.name||'Menunggu pemenang')} <b>${m.played?m.as:'-'}</b></div><div class="muted tiny">${status}${m.winnerId?' • Pemenang: '+esc(db.clubs.find(c=>c.id===m.winnerId)?.name||'') : ''}</div>${!waiting?`<button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit skor</button>`:'<span class="muted tiny">Menunggu pemenang pertandingan sebelumnya</span>'}</div>`
+ return `<div class="match-card"><div class="muted tiny">${esc(m.round||'Pertandingan')} • #${m.matchNo||''}</div><div class="match-team">${esc(a?.name||'Menunggu pemenang')} <b>${m.played&&m.hs!=null?m.hs:'-'}</b></div><div class="match-team">${esc(b?.name||'Menunggu pemenang')} <b>${m.played&&m.as!=null?m.as:'-'}</b></div><div class="muted tiny">${status}${m.winnerId?' • Pemenang: '+esc(db.clubs.find(c=>c.id===m.winnerId)?.name||'') : ''}</div>${!waiting?`<button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit skor</button>`:'<span class="muted tiny">Menunggu pemenang pertandingan sebelumnya</span>'}</div>`
 }
 function schedulePage(){
  let t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id);
@@ -168,8 +180,8 @@ async function fetchLogo(name){try{let q=encodeURIComponent(name+' football club
 function tournamentFormatFields(format,t={}){
  let html='';
  if(format==='groups'||format==='hybrid') html+=`<div class="form-grid">${field('Jumlah grup','groupCount',t.groupCount||2,'number','min="1" max="32"')}${field('Tim lolos per grup','qualifiers',t.qualifiers||2,'number','min="1" max="8"')}</div><div class="hint">Pengaturan ini digunakan untuk pembagian peserta dan penentuan klub yang lolos.</div>`;
- if(format==='league') html+=`<div class="form-grid">${selectField('Sistem pertandingan','legs',[['1','Satu putaran (setiap klub bertemu 1 kali)'],['2','Kandang & tandang (setiap klub bertemu 2 kali)']],String(t.legs||1))}</div><div class="notice">Jadwal liga dibuat otomatis dalam beberapa Matchday. Setiap Matchday dapat dibagikan sekaligus melalui WhatsApp.</div>`;
- if(format==='knockout') html+=`<div class="notice">Sistem gugur langsung. Klub yang menang melaju ke babak berikutnya. Jika jumlah klub bukan 2, 4, 8, 16, 32, 64 atau 128, sistem akan membuat bye secara otomatis.</div>`;
+ if(format==='league') html+=`<div class="form-grid">${selectField('Sistem pertandingan','legs',[['2','Kandang & tandang (setiap klub bertemu 2 kali)'],['1','Satu putaran (setiap klub bertemu 1 kali)']],String(t.legs||2))}${field('Jumlah klub degradasi','relegationCount',t.relegationCount??3,'number','min="0" max="20"')}</div><div class="notice">Juara ditentukan dari peringkat pertama pada akhir musim. Promosi/degradasi dikelola untuk musim/kasta berikutnya.</div>`;
+ if(format==='knockout'||format==='hybrid') html+=`<div class="notice">Sistem gugur: pertandingan wajib memiliki pemenang. Jika imbang setelah 90 menit, catat extra time (2×15 menit); jika tetap imbang, tentukan pemenang melalui adu penalti (5 penendang awal lalu sudden death). Skor penalti dicatat terpisah dan tidak menambah gol klub. Aturan gol tandang tidak digunakan.</div>`;
  return html;
 }
 function newTournament(t){
@@ -190,7 +202,7 @@ function newTournament(t){
    if(club){club.name=names[i];chosen.push(club.id)}
    else{let id=uid();db.clubs.push({id,name:names[i],location:'',phone:'',logo:'',logoSource:'initial'});chosen.push(id)}
   }
-  let tdata={id:t?.id||uid(),name,format,legs:format==='league'?(+formVal('legs')||1):1,groupCount:(format==='groups'||format==='hybrid')?+formVal('groupCount'):0,qualifiers:(format==='groups'||format==='hybrid')?+formVal('qualifiers'):0,clubIds:chosen,clubCount:count,createdAt:t?.createdAt||new Date().toISOString()};
+  let tdata={id:t?.id||uid(),name,format,legs:format==='league'?(+formVal('legs')||2):1,relegationCount:format==='league'?(+formVal('relegationCount')||3):0,groupCount:(format==='groups'||format==='hybrid')?+formVal('groupCount'):0,qualifiers:(format==='groups'||format==='hybrid')?+formVal('qualifiers'):0,clubIds:chosen,clubCount:count,createdAt:t?.createdAt||new Date().toISOString()};
   if(t){db.tournaments=db.tournaments.map(x=>x.id===t.id?tdata:x)}else{db.tournaments.push(tdata);db.activeTournament=tdata.id}
   save();log(edit?'Edit turnamen':'Buat turnamen',{name:tdata.name,format});render();return true
  },'Simpan Turnamen');
@@ -268,14 +280,15 @@ function editScore(id){
  let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);
  const isKnockout=!!(m.round&&!m.group);
  let body=`${field('Gol tim kandang','hs',m.hs??0,'number','min="0" step="1"')}${field('Gol tim tandang','as',m.as??0,'number','min="0" step="1"')}`;
- if(isKnockout)body+=selectField('Pemenang jika skor imbang (adu penalti)','winnerId',[['','Pilih pemenang adu penalti'],[m.home,a?.name||'Tim kandang'],[m.away,b?.name||'Tim tandang']],m.winnerId||'');
+ if(m.group)body+=`<div class="form-grid">${field('Kartu kuning kandang','homeYellow',m.homeYellow??0,'number','min="0" step="1"')}${field('Kartu merah kandang','homeRed',m.homeRed??0,'number','min="0" step="1"')}${field('Kartu kuning tandang','awayYellow',m.awayYellow??0,'number','min="0" step="1"')}${field('Kartu merah tandang','awayRed',m.awayRed??0,'number','min="0" step="1"')}</div>`;
+ if(isKnockout)body+=`${field('Gol penalti kandang (terpisah)','homePens',m.homePens??'','number','min="0" step="1"')}${field('Gol penalti tandang (terpisah)','awayPens',m.awayPens??'','number','min="0" step="1"')}`+selectField('Pemenang jika skor imbang (adu penalti)','winnerId',[['','Pilih pemenang adu penalti'],[m.home,a?.name||'Tim kandang'],[m.away,b?.name||'Tim tandang']],m.winnerId||'');
  modal('Input Hasil Pertandingan',body,()=>{
   const hsRaw=formVal('hs'),asRaw=formVal('as'),winnerId=formVal('winnerId');
   if(hsRaw===''||asRaw===''||!Number.isInteger(Number(hsRaw))||!Number.isInteger(Number(asRaw))||Number(hsRaw)<0||Number(asRaw)<0){toast('Masukkan skor berupa bilangan bulat 0 atau lebih.');return false}
   const hs=Number(hsRaw),as=Number(asRaw);
   if(isKnockout&&hs===as&&!winnerId){toast('Skor knockout imbang. Pilih pemenang adu penalti.');return false}
   if(isKnockout&&hs!==as&&winnerId){/* winner is determined by full-time score */}
-  m.hs=hs;m.as=as;m.played=true;
+  m.hs=hs;m.as=as;m.homeYellow=Number(formVal('homeYellow')||0);m.homeRed=Number(formVal('homeRed')||0);m.awayYellow=Number(formVal('awayYellow')||0);m.awayRed=Number(formVal('awayRed')||0);m.homePens=formVal('homePens')===''?null:Number(formVal('homePens'));m.awayPens=formVal('awayPens')===''?null:Number(formVal('awayPens'));m.played=true;
   m.winnerId=hs>as?m.home:hs<as?m.away:(isKnockout?winnerId:'');
   if(isKnockout)advanceKnockout(m.tournamentId);
   save();log('Input skor',{match:id,hs:m.hs,as:m.as,winnerId:m.winnerId});render();
@@ -372,7 +385,7 @@ async function shareGroupChart(){
 }
 async function shareKOChart(){
  const t=active();if(!t)return;const matches=db.matches.filter(m=>m.tournamentId===t.id&&!m.group&&m.round).sort((a,b)=>(a.roundIndex??0)-(b.roundIndex??0)||(a.matchNo||0)-(b.matchNo||0));if(!matches.length){toast('Bagan knockout belum dibuat.');return}
- const per=4,pages=Math.ceil(matches.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=matches.slice(pg*per,(pg+1)*per),rows=chunk.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home)?.name||'Menunggu pemenang',b=db.clubs.find(c=>c.id===m.away)?.name||'Menunggu pemenang',win=db.clubs.find(c=>c.id===m.winnerId)?.name;return `${m.round||'Knockout'} • ${i+1}. ${a} ${m.played?m.hs:'-'} VS ${m.played?m.as:'-'} ${b}${win?' • LOLOS '+win:''}`});files.push(await canvasFile(shareCanvasBase(`BAGAN KNOCKOUT • ${t.name}`,`HALAMAN ${pg+1}/${pages} • ${matches.length} PERTANDINGAN`,rows),`Knockout-${pg+1}-dari-${pages}.jpg`))}
+ const per=4,pages=Math.ceil(matches.length/per),files=[];for(let pg=0;pg<pages;pg++){const chunk=matches.slice(pg*per,(pg+1)*per),rows=chunk.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home)?.name||'Menunggu pemenang',b=db.clubs.find(c=>c.id===m.away)?.name||'Menunggu pemenang',win=db.clubs.find(c=>c.id===m.winnerId)?.name;return `${m.round||'Knockout'} • ${i+1}. ${a} ${m.played&&m.hs!=null?m.hs:'-'} VS ${m.played&&m.as!=null?m.as:'-'} ${b}${win?' • LOLOS '+win:''}`});files.push(await canvasFile(shareCanvasBase(`BAGAN KNOCKOUT • ${t.name}`,`HALAMAN ${pg+1}/${pages} • ${matches.length} PERTANDINGAN`,rows),`Knockout-${pg+1}-dari-${pages}.jpg`))}
  await shareImageSet(files,'Bagan Knockout',`🏆 ${t.name}\nBAGAN KNOCKOUT\nSeluruh babak dan pertandingan dilampirkan dalam ${pages} gambar.`);
 }
 async function shareMatchday(round){
