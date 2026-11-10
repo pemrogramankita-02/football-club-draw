@@ -1,6 +1,3 @@
-FILE TUJUAN: service-worker.js
-Salin seluruh isi setelah garis pemisah ke file dengan nama tujuan di atas.
-========================================================================
 const CACHE='fcd-revisi-07-share-complete-roboto';
 const CORE=['./','./index.html','./manifest.json','./css/style.css','./js/app.js','./assets/icons/icon.svg','./assets/icons/icon-192.png','./assets/icons/icon-512.png'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE))));
