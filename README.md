@@ -132,3 +132,25 @@ Saat membuat turnamen, pilih **Liga penuh (round-robin)**. Buat jadwal liga untu
 - Data lama tetap memakai key LocalStorage yang sama (`fcd_full_v2`).
 
 Catatan: implementasi ini belum mencakup kalkulasi agregat dua leg otomatis atau modul promosi antar-turnamen yang memindahkan klub ke kasta lain. Pencatatan extra time menggunakan skor akhir pertandingan; pencatatan detail durasi 2x15 dan sudden-death penalti masih perlu diuji/ditambahkan pada iterasi berikutnya.
+
+
+## Revisi 09 — Visual Contrast & Typography
+- Tema visual diseragamkan menjadi Dark Charcoal, Sky Blue, dan Soft Yellow.
+- Tipografi menggunakan Roboto dengan ukuran yang diperbesar, khususnya pada tampilan HP.
+- Kontras judul, nama turnamen, nama klub, label, tombol, tabel, formulir, dan status diperjelas.
+- Perubahan dibatasi pada CSS, pemanggilan font di HTML, warna tema browser, dan versi cache PWA.
+- Tidak ada perubahan pada logika aplikasi, perhitungan turnamen, fitur, ikon, maupun struktur penyimpanan data.
+
+
+## Revisi 10 — Aturan Kompetisi & Validasi Jadwal
+
+- Format kompetisi baru dibatasi menjadi tiga: Liga, Fase Grup + Knock-out, dan Knock-out.
+- Data turnamen lama dengan format `groups` dibaca sebagai `hybrid` (Fase Grup + Knock-out) agar hasil undian dan data lamanya tetap dikenali.
+- Generator round-robin fase grup dan liga diperbaiki menggunakan rotasi lingkaran yang benar.
+- Jadwal liga satu putaran menghasilkan N×(N−1)/2 pertandingan; dua putaran menghasilkan N×(N−1) pertandingan.
+- Klasemen liga dan fase grup menggunakan urutan Poin → GM → SG → GK paling sedikit.
+- Kolom GM dan GK ditampilkan pada klasemen fase grup.
+- Pengundian babak Knock-out mengacak ulang klub yang lolos dan mendistribusikan slot bye secara acak. Hasil bagan tersimpan di data turnamen.
+- Cache PWA dinaikkan agar file terbaru diambil setelah deploy.
+
+Catatan validasi: algoritma round-robin diuji secara terpisah untuk jumlah klub 2–20; setiap pasangan muncul tepat satu kali pada putaran tunggal dan tidak ada klub bermain dua kali pada Matchday yang sama. Pemeriksaan sintaks JavaScript menggunakan `node --check`. Pengujian browser langsung belum dilakukan.
