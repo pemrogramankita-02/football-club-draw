@@ -467,3 +467,21 @@ footer span{color:#55B8F2}
   .mobile-nav button{font-size:11px}
   footer{font-size:10px}
 }
+
+/* CATATAN SAYA — isolated feature styles */
+.notes-heading{align-items:center;gap:14px;flex-wrap:wrap}
+.notes-heading h2{font:800 22px Roboto,Arial,sans-serif;margin:0 0 6px}
+.notes-heading p{margin:0;color:var(--muted);font-size:13px}
+.notes-search{margin:16px 0}
+.notes-search input{width:100%;padding:13px 15px;border-radius:12px}
+.notes-list{display:grid;gap:12px}
+.note-card{display:flex;align-items:center;gap:14px;padding:16px;margin:0;min-width:0}
+.note-icon{width:48px;height:48px;flex:0 0 48px;border-radius:13px;background:#29465B;color:#75D3FA;display:grid;place-items:center;font-size:25px;border:1px solid #55B8F2}
+.note-main{min-width:0;flex:1}
+.note-main h3{font:700 16px Roboto,Arial,sans-serif;margin:0 0 6px;color:var(--text);overflow-wrap:anywhere}
+.note-main p{font-size:13px;line-height:1.5;color:var(--muted);margin:0 0 6px;white-space:normal;overflow-wrap:anywhere}
+.note-main small{font-size:11px;color:var(--muted)}
+.note-actions{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.btn-whatsapp{background:#16a765;color:#fff;border:1px solid #16a765}
+.notes-storage{margin-top:16px}
+@media(max-width:680px){.note-card{align-items:flex-start;flex-wrap:wrap;padding:13px;gap:10px}.note-icon{width:42px;height:42px;flex-basis:42px}.note-main{width:calc(100% - 54px);flex:1}.note-actions{width:100%;padding-left:52px}.note-actions .btn{flex:1;min-width:0;padding:8px 7px;font-size:12px}.notes-heading .btn{width:100%}.notes-heading{align-items:stretch}}
