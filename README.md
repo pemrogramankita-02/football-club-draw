@@ -154,3 +154,65 @@ Catatan: implementasi ini belum mencakup kalkulasi agregat dua leg otomatis atau
 - Cache PWA dinaikkan agar file terbaru diambil setelah deploy.
 
 Catatan validasi: algoritma round-robin diuji secara terpisah untuk jumlah klub 2–20; setiap pasangan muncul tepat satu kali pada putaran tunggal dan tidak ada klub bermain dua kali pada Matchday yang sama. Pemeriksaan sintaks JavaScript menggunakan `node --check`. Pengujian browser langsung belum dilakukan.
+
+## Revisi 11 — SUPER HD+ capture tampilan asli
+- Tombol berbagi Jadwal & Skor dan Hasil & Klasemen kini mengambil gambar langsung dari elemen halaman web aktif, bukan menggambar ulang kartu/tabel dengan Canvas khusus.
+- Capture menggunakan skala 3x dan PNG; halaman panjang dibagi otomatis menjadi beberapa gambar berurutan.
+- Tombol/aksi interaktif disembunyikan pada salinan capture agar gambar fokus pada isi halaman.
+- Satu caption WhatsApp disertakan untuk seluruh rangkaian gambar.
+- Capture memuat html2canvas dari CDN saat tombol berbagi ditekan; koneksi internet diperlukan saat pertama kali memuat pustaka.
+- Jika perangkat/browser tidak mendukung berbagi beberapa file sekaligus, semua gambar diunduh dan WhatsApp dibuka dengan satu caption; lampiran perlu dipilih manual.
+- Cache service worker diperbarui ke Revisi 11.
+
+## Revisi 12 – penyelarasan berbagi visual
+- Capture jadwal per Matchday dari elemen halaman yang tampil, bukan membuat ulang kartu melalui Canvas.
+- Gambar hasil capture menggunakan PNG skala 3x dan otomatis dipotong menjadi beberapa bagian jika panjang.
+- Tombol bagikan MD ditambahkan pada jadwal Liga dan Fase Grup.
+- Pesan WhatsApp/catatan hanya disertakan pada berbagi jadwal; berbagi hasil/klasemen tidak menambahkan catatan.
+- Tema hasil capture mengikuti CSS halaman aplikasi (Dark Charcoal, Sky Blue, Soft Yellow).
+- Cache service worker diperbarui ke revisi 12.
+- Pengujian: `node --check js/app.js` lulus. Uji browser/WhatsApp langsung belum dilakukan.
+
+
+## Revisi 13 — Grafis Share
+- Poster jadwal per Matchday menggunakan template grafis Dark Charcoal, Sky Blue, dan Soft Yellow.
+- Caption WhatsApp jadwal memuat pasangan klub dan nomor HP A/B satu kali untuk seluruh rangkaian gambar.
+- Template hasil/klasemen dan bracket menggunakan palet grafis yang diselaraskan.
+- Fitur inti dan struktur penyimpanan turnamen tidak diubah.
+- Catatan pengujian: validasi sintaks JavaScript dilakukan; pengujian browser/WhatsApp langsung tetap diperlukan.
+
+
+## Revisi 14 – Poster hasil dan bracket
+- Catatan jadwal memakai format per pertandingan: nama klub VS nama klub, lalu nomor HP masing-masing klub; nomor kosong tidak ditulis sebagai “Belum tersedia”.
+- Poster bracket Knock-out menggunakan tema Dark Charcoal, Sky Blue, dan Soft Yellow.
+- Poster klasemen grup menggunakan baris gelap dengan aksen biru.
+- Cache PWA diperbarui ke Revisi 14.
+- Pemeriksaan sintaks JavaScript dilakukan; pengujian browser/WhatsApp tetap perlu dilakukan pada perangkat pengguna.
+
+
+## Revisi 14 — Poster hasil dan klasemen
+
+- Jadwal per Matchday tetap memakai poster jadwal yang sudah ada.
+- Format catatan WhatsApp jadwal menggunakan satu blok per pertandingan: `\\ PERTANDINGAN n//`, `Klub A VS Klub B`, lalu nomor HP masing-masing klub; nomor kosong dibiarkan kosong.
+- Tombol `Hasil + Klasemen MD` tersedia pada setiap Matchday untuk Liga dan Fase Grup.
+- Liga membagikan hasil MD terpilih beserta klasemen kumulatif sampai MD tersebut.
+- Fase Grup membagikan hasil MD terpilih dan klasemen kumulatif tiap grup sampai MD tersebut.
+- Knock-out membagikan hasil per babak dan status kelolosan dalam poster grafis.
+- Poster hasil memakai Dark Charcoal, Sky Blue, Soft Yellow, font Roboto, serta logo klub dari data aplikasi.
+- Hasil, klasemen, dan bracket dibagikan tanpa catatan WhatsApp.
+
+Pemeriksaan yang dilakukan: `node --check js/app.js`. Pengujian browser/WhatsApp langsung tetap perlu dilakukan pada perangkat pengguna.
+
+
+## Revisi 1 + Revisi 2 (Share Poster)
+- Seluruh poster berbagi memakai tema poster vertikal Dark Charcoal, Sky Blue, Soft Yellow, identitas turnamen, logo klub, dan footer resmi.
+- Poster klasemen Liga/Fase Grup hanya memuat tabel klasemen; tidak menyertakan hasil pertandingan maupun penghargaan Klub Tersubur.
+- Tombol Bagikan Seluruh Jadwal dihapus; berbagi jadwal tetap tersedia per Matchday/babak.
+- Catatan jadwal memakai format pertandingan ringkas dengan bullet nama klub dan nomor HP; nomor HP dinormalisasi untuk mencegah pengulangan angka identik.
+
+
+## Revisi 1-2 + Catatan Saya
+- Menu Catatan Saya tersedia di bagian Aplikasi pada sidebar.
+- Mendukung banyak catatan: buat, edit, hapus, cari, dan bagikan ke WhatsApp.
+- Catatan disimpan terpisah di LocalStorage (`fcd_user_notes_v1`) agar tidak mengubah struktur data turnamen.
+- Data catatan tetap ada saat web ditutup dan dibuka kembali pada browser/perangkat yang sama. Data tidak otomatis tersinkron ke perangkat lain dan tidak termasuk backup turnamen JSON.
