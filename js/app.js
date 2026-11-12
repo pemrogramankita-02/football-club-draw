@@ -289,7 +289,8 @@ function newMatch(){let t=active(),d=getDraw();if(!t||!d)return;let opts=clubs()
 function editScore(id){
  let m=db.matches.find(x=>x.id===id);if(!m)return;
  let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);
- const isKnockout=!!(m.round&&!m.group);
+ const matchTournament=db.tournaments.find(t=>t.id===m.tournamentId);
+ const isKnockout=matchTournament?.format==='knockout'||(matchTournament?.format==='hybrid'&&!!(m.round&&!m.group));
  let body=`${field(isKnockout?'Gol akhir kandang (termasuk extra time)':'Gol tim kandang','hs',m.hs??0,'number','min="0" step="1"')}${field(isKnockout?'Gol akhir tandang (termasuk extra time)':'Gol tim tandang','as',m.as??0,'number','min="0" step="1"')}`;
  if(m.group)body+=`<div class="form-grid">${field('Kartu kuning kandang','homeYellow',m.homeYellow??0,'number','min="0" step="1"')}${field('Kartu merah kandang','homeRed',m.homeRed??0,'number','min="0" step="1"')}${field('Kartu kuning tandang','awayYellow',m.awayYellow??0,'number','min="0" step="1"')}${field('Kartu merah tandang','awayRed',m.awayRed??0,'number','min="0" step="1"')}</div>`;
  if(isKnockout)body+=`${field('Gol penalti kandang (terpisah)','homePens',m.homePens??'','number','min="0" step="1"')}${field('Gol penalti tandang (terpisah)','awayPens',m.awayPens??'','number','min="0" step="1"')}`+selectField('Pemenang jika skor imbang (adu penalti)','winnerId',[['','Pilih pemenang adu penalti'],[m.home,a?.name||'Tim kandang'],[m.away,b?.name||'Tim tandang']],m.winnerId||'');
@@ -683,70 +684,60 @@ function shareTournamentInfo(id){
  if(!t){toast('Turnamen tidak ditemukan.');return}
  const participants=(t.clubIds||[]).map(cid=>db.clubs.find(c=>c.id===cid)).filter(Boolean);
  const n=participants.length;
- const padRows=(rows)=>'```\n'+rows.map(([label,value])=>`${label.padEnd(20,' ')} : ${value}`).join('\n')+'\n```';
- const lines=[
-  '━━━━━━━━━━━━━━━━━━━━',
-  '⚽ *INFORMASI TURNAMEN*',
-  '━━━━━━━━━━━━━━━━━━━━',
-  '',
-  '*DATA TURNAMEN*',
-  ''
+ const separator='━━━━━━━━━━━━━━━━━━━━';
+ const alignRows=rows=>{
+  const width=Math.max(...rows.map(row=>row[0].length));
+  return '```'+'\n'+rows.map(([label,value])=>label.padEnd(width,' ')+' : '+value).join('\n')+'\n'+'```';
+ };
+ const formatName={league:'Liga',hybrid:'Fase Grup + Knock-out',knockout:'Knock-out'}[t.format]||String(t.format||'-');
+ const lines=[separator,'⚽ *INFORMASI TURNAMEN*',separator,'','*DATA TURNAMEN*'];
+ const dataRows=[
+  ['Nama Turnamen',t.name||'-'],
+  ['Jumlah Klub',`${n} Klub`],
+  ['Format',formatName]
  ];
  if(t.format==='league'){
   const legs=Math.max(1,Number(t.legs)||1);
   const isDouble=legs===2;
+  dataRows.push(['Sistem',isDouble?'Double Round Robin':'Single Round Robin'],['Jumlah Leg',`${legs} Leg`]);
+  lines.push(alignRows(dataRows),'','*SISTEM PERTANDINGAN*','');
+  lines.push(`Setiap klub bertemu seluruh lawan sebanyak ${legs} kali.`);
+  if(isDouble)lines.push('• Leg 1 : HOME','• Leg 2 : AWAY');
+  else lines.push('• Setiap pasangan bertemu 1 kali.');
   const matchDays=n<=1?0:(n%2===0?(n-1)*legs:n*legs);
   const matchesPerDay=Math.floor(n/2);
   const perClubMatches=Math.max(0,(n-1)*legs);
   const totalMatches=n*(n-1)/2*legs;
-  const system=isDouble?'Double Round Robin':'Single Round Robin';
-  lines.push(padRows([
-   ['Nama Turnamen',t.name||'-'],
-   ['Jumlah Klub',`${n} Klub`],
-   ['Format','Liga'],
-   ['Sistem',system],
-   ['Jumlah Leg',`${legs} Leg`]
-  ]));
-  lines.push('', '*SISTEM PERTANDINGAN*', '', `Setiap klub bertemu seluruh lawan sebanyak ${isDouble?'2 kali':'1 kali'}.`, '');
-  if(isDouble)lines.push('• Leg 1 : HOME','• Leg 2 : AWAY');
-  else lines.push('• Pertandingan menggunakan 1 leg.');
-  lines.push('', '*RINCIAN PERTANDINGAN*', '', padRows([
+  const detailRows=[
    ['Total Match Day',String(matchDays)],
    ['Match per Klub',String(perClubMatches)],
    ['Match per Match Day',String(matchesPerDay)],
-   ...(n%2===1?[['Klub BYE','1 setiap Match Day']]:[]),
+   ['Klub BYE',n%2===1?'1 setiap Match Day':'Tidak ada'],
    ['Total Pertandingan',`${totalMatches} Match`]
-  ]));
-  lines.push('', '*KETENTUAN PERTANDINGAN*', '',
+  ];
+  lines.push('','*RINCIAN PERTANDINGAN*','',alignRows(detailRows),'','*KETENTUAN PERTANDINGAN*','',
    '• Setiap klub mengikuti jadwal yang ditentukan.',
    `• Setiap Match Day terdiri dari ${matchesPerDay} pertandingan.`,
    ...(n%2===1?['• Satu klub mendapatkan jadwal istirahat (BYE) setiap Match Day.']:[]),
-   ...(isDouble?[`• Setiap klub menjalani ${perClubMatches/2} pertandingan HOME dan ${perClubMatches/2} pertandingan AWAY.`]:[]),
+   ...(isDouble?['• Setiap klub menjalani jumlah pertandingan HOME dan AWAY yang sama.']:[]),
    '• Juara ditentukan berdasarkan posisi akhir klasemen.',
-   '',
-   '━━━━━━━━━━━━━━━━━━━━',
-   `*${matchDays} MATCH DAY | ${totalMatches} MATCH*`,
-   '━━━━━━━━━━━━━━━━━━━━',
-   '',
-   'Selamat bertanding dan junjung tinggi sportivitas!'
-  );
+   '',separator,`*${matchDays} MATCH DAY | ${totalMatches} MATCH*`,separator,'',
+   'Selamat bertanding dan junjung tinggi sportivitas!');
  }else if(t.format==='hybrid'){
-  lines.push(padRows([
-   ['Nama Turnamen',t.name||'-'],
-   ['Jumlah Klub',`${n} Klub`],
-   ['Format','Fase Grup + Knock-out'],
-   ['Jumlah Grup',String(Number(t.groupCount)||0)],
-   ['Lolos per Grup',String(Number(t.qualifiers)||0)]
-  ]));
-  lines.push('', '*SISTEM PERTANDINGAN*', '', 'Peserta dibagi ke dalam beberapa grup. Klub yang lolos akan melanjutkan ke babak Knock-out.', '', '*KETENTUAN PERTANDINGAN*', '', '• Setiap klub mengikuti jadwal yang ditentukan.', '• Klub yang lolos grup melanjutkan ke babak Knock-out.', '', '━━━━━━━━━━━━━━━━━━━━', '*FASE GRUP + KNOCK-OUT*', '━━━━━━━━━━━━━━━━━━━━', '', 'Selamat bertanding dan junjung tinggi sportivitas!');
+  dataRows.push(['Sistem','Fase Grup + Knock-out'],['Jumlah Grup',`${Number(t.groupCount)||0} Grup`],['Tim Lolos per Grup',`${Number(t.qualifiers)||0} Klub`]);
+  lines.push(alignRows(dataRows),'','*SISTEM PERTANDINGAN*','',
+   '• Peserta dibagi ke dalam beberapa grup.',
+   '• Klub bertanding di fase grup sesuai jadwal.',
+   '• Klub yang lolos melanjutkan ke babak Knock-out.',
+   '',separator,'Selamat bertanding dan junjung tinggi sportivitas!');
+ }else if(t.format==='knockout'){
+  dataRows.push(['Sistem','Knock-out / Sistem Gugur']);
+  lines.push(alignRows(dataRows),'','*SISTEM PERTANDINGAN*','',
+   '• Pertandingan menggunakan sistem gugur.',
+   '• Pemenang melaju ke babak berikutnya.',
+   '',separator,'Selamat bertanding dan junjung tinggi sportivitas!');
  }else{
-  lines.push(padRows([
-   ['Nama Turnamen',t.name||'-'],
-   ['Jumlah Klub',`${n} Klub`],
-   ['Format','Knock-out'],
-   ['Sistem','Sistem Gugur']
-  ]));
-  lines.push('', '*SISTEM PERTANDINGAN*', '', 'Pemenang setiap pertandingan melaju ke babak berikutnya.', '', '*KETENTUAN PERTANDINGAN*', '', '• Setiap klub mengikuti jadwal yang ditentukan.', '• Klub yang kalah tersingkir dari turnamen.', '', '━━━━━━━━━━━━━━━━━━━━', '*KNOCK-OUT | SISTEM GUGUR*', '━━━━━━━━━━━━━━━━━━━━', '', 'Selamat bertanding dan junjung tinggi sportivitas!');
+  lines.push(alignRows(dataRows),'',separator,'Selamat bertanding dan junjung tinggi sportivitas!');
  }
  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener,noreferrer');
 }
