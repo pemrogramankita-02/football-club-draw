@@ -139,6 +139,17 @@ function generateLeague(){
  db.matches=db.matches.filter(m=>m.tournamentId!==t.id);db.matches.push(...fixtures);
  save();log('Buat jadwal liga',{teams:teams.length,matches:fixtures.length,legs:t.legs||1});render();toast(`${fixtures.length} pertandingan liga berhasil dibuat.`);setTimeout(animateLeague,250);
 }
+function generateHybridSchedule(){
+ const t=active(),d=getDraw();if(!t||t.format!=='hybrid'||!d)return;
+ if(!confirm('Buat ulang seluruh jadwal fase grup? Jadwal dan skor pertandingan yang lama akan diganti.'))return;
+ db.matches=db.matches.filter(m=>m.tournamentId!==t.id||!m.group);
+ const groupRounds=d.groups.map(g=>({group:g.name,rounds:buildGroupRounds(g.clubs)}));
+ const maxMatchdays=Math.max(0,...groupRounds.map(x=>x.rounds.length));let matchNo=1;
+ for(let ri=0;ri<maxMatchdays;ri++)groupRounds.forEach(gr=>{
+  (gr.rounds[ri]||[]).forEach(pair=>db.matches.push({id:uid(),tournamentId:t.id,home:pair[0].id,away:pair[1].id,group:gr.group,round:`Matchday ${ri+1}`,roundIndex:ri,matchNo:matchNo++,date:'',time:'',venue:'',played:false,hs:null,as:null}));
+ });
+ save();render();toast('Jadwal fase grup berhasil dibuat ulang.');
+}
 function leagueStandingsPage(){
  let t=active();if(!t)return '';
  let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean).map(c=>({club:c,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
@@ -158,8 +169,8 @@ function schedulePage(){
  let t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id);
  if(t?.format==='league'){
   let rounds=[...new Set(ms.map(m=>m.roundIndex??0))].sort((a,b)=>a-b);
-  let html=rounds.map((r,ri)=>{let games=ms.filter(m=>(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${games.length} pertandingan dalam satu pekan</div></div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-whatsapp btn-sm" data-action="reshareMatchday" data-round="${r}">Bagikan Ulang</button><button class="btn btn-ghost btn-sm" data-action="setMatchdayDeadline" data-round="${r}">Atur Deadline</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture" data-fixture="${i}"><div class="muted tiny">PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''} ${m.venue?'• '+esc(m.venue):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
-  return `<div class="section-head"><div><h2>Jadwal Liga & Hasil Pertandingan</h2><p>Animasi memperkenalkan setiap pasangan klub A VS B per Matchday.</p></div><div class="actions"><button class="btn btn-ghost" data-action="animateLeague">▶ Putar Animasi Jadwal</button><button class="btn btn-ghost" data-action="generateLeague">⚽ Buat Ulang Jadwal</button></div></div>${ms.length?html:'<div class="empty"><b>Jadwal liga belum dibuat</b>Tekan Buat Jadwal Liga untuk membuat seluruh Matchday.</div>'}`;
+  let html=rounds.map((r,ri)=>{let games=ms.filter(m=>(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${games.length} pertandingan dalam satu pekan</div></div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture" data-fixture="${i}"><div class="muted tiny">PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''} ${m.venue?'• '+esc(m.venue):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
+  return `<div class="section-head"><div><h2>Jadwal Liga & Hasil Pertandingan</h2><p>Jadwal pertandingan disusun berdasarkan Matchday.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateLeague">⚽ Buat Ulang Jadwal</button></div></div>${ms.length?html:'<div class="empty"><b>Jadwal liga belum dibuat</b>Tekan Buat Jadwal Liga untuk membuat seluruh Matchday.</div>'}`;
  }
  if(t?.format==='hybrid'){
   // Kompatibilitas untuk hasil undian lama: pasangkan fixture lama ke ronde round-robin.
@@ -175,8 +186,8 @@ function schedulePage(){
    });save();
   }
   const roundIds=[...new Set(ms.filter(m=>m.group).map(m=>m.roundIndex??0))].sort((a,b)=>a-b);
-  const html=roundIds.map((r,ri)=>{const games=ms.filter(m=>m.group&&(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${[...new Set(games.map(m=>m.group))].join(' • ')} · ${games.length} pertandingan lintas grup</div></div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-whatsapp btn-sm" data-action="reshareMatchday" data-round="${r}">Bagikan Ulang</button><button class="btn btn-ghost btn-sm" data-action="setMatchdayDeadline" data-round="${r}">Atur Deadline</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture"><div class="muted tiny">${esc(m.group)} · PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
-  return `<div class="section-head"><div><h2>Jadwal Fase Grup & Hasil</h2><p>Setiap Matchday berisi pertandingan Grup A, B, C, D secara bersamaan.</p></div><div class="actions"><button class="btn btn-ghost" data-action="animateLeague">▶ Putar Animasi Jadwal</button></div></div>${html||'<div class="empty"><b>Jadwal fase grup belum tersedia</b>Lakukan pengundian untuk membuat jadwal otomatis.</div>'}`;
+  const html=roundIds.map((r,ri)=>{const games=ms.filter(m=>m.group&&(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${[...new Set(games.map(m=>m.group))].join(' • ')} · ${games.length} pertandingan lintas grup</div></div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture"><div class="muted tiny">${esc(m.group)} · PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
+  return `<div class="section-head"><div><h2>Jadwal Fase Grup & Hasil</h2><p>Setiap Matchday berisi pertandingan Grup A, B, C, D secara bersamaan.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateHybridSchedule">⚽ Buat Ulang Jadwal</button></div></div>${html||'<div class="empty"><b>Jadwal fase grup belum tersedia</b>Lakukan pengundian untuk membuat jadwal otomatis.</div>'}`;
  }
  return `<div class="section-head"><div><h2>Jadwal & Hasil Pertandingan</h2><p>Kelola tanggal, jam, venue, skor dan hasil pertandingan.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareActualSchedule">Bagikan Jadwal • SUPER HD+</button><button class="btn btn-ghost" data-action="newMatch" ${!t?'disabled':''}>＋ Tambah Jadwal</button></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Pertandingan</th><th>Grup / Babak</th><th>Tanggal & Venue</th><th>Skor</th><th>Aksi</th></tr></thead><tbody>${ms.map(m=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<tr><td><b>${esc(a?.name||'TBD')} vs ${esc(b?.name||'TBD')}</b></td><td>${esc(m.group||m.round||'-')}</td><td>${m.date?fmtDate(m.date):'-'} ${m.time||''} ${esc(m.venue||'')}</td><td>${m.played?`${m.hs} - ${m.as}`:'-'}</td><td><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input Skor</button></td></tr>`}).join('')}</tbody></table></div></div>`;
 }
@@ -556,32 +567,36 @@ function formatWIBDate(dateString){
  const date=new Date(Date.UTC(y,m-1,d,12));
  return new Intl.DateTimeFormat('id-ID',{weekday:'long',day:'2-digit',month:'long',year:'numeric',timeZone:'Asia/Jakarta'}).format(date);
 }
-function setMatchdayDeadline(round){
+function addCalendarDays(dateString,days){
+ const [y,m,d]=dateString.split('-').map(Number),date=new Date(Date.UTC(y,m-1,d+Number(days)));
+ return `${date.getUTCFullYear()}-${String(date.getUTCMonth()+1).padStart(2,'0')}-${String(date.getUTCDate()).padStart(2,'0')}`;
+}
+function setMatchdayDeadline(){
  const t=active();if(!t)return;
- const key=String(round),saved=t.matchdayDeadlines?.[key];
- modal('Atur Deadline Match Day',`${selectField('Batas waktu setelah jadwal dibagikan','deadlineDays',[['2','2 Hari'],['3','3 Hari'],['4','4 Hari'],['5','5 Hari'],['7','7 Hari']],String(saved?.days||2))}<div class="notice">Deadline dihitung berdasarkan tanggal kalender WIB. Batas akhir selalu pukul <b>23.59 WIB</b>. Pengaturan berlaku khusus Match Day ${Number(round)+1}.</div>`,()=>{
-  const days=Number(formVal('deadlineDays'));
-  if(![2,3,4,5,7].includes(days)){toast('Pilih durasi deadline yang tersedia.');return false}
-  t.matchdayDeadlines=t.matchdayDeadlines||{};
-  t.matchdayDeadlines[key]={...(t.matchdayDeadlines[key]||{}),days};
-  save();render();toast(`Deadline Match Day ${Number(round)+1} diatur ${days} hari.`);return true;
+ const saved=t.matchdayDeadlineSettings||{},today=deadlineDateFromNow(0);
+ modal('Atur Deadline Turnamen',`${field('Tanggal mulai Match Day 1','deadlineStartDate',saved.startDate||today,'date','required')}${field('Durasi setiap Match Day (hari)','deadlineDuration',saved.days||2,'number','min="1" max="365" required')}<div class="notice">Semua Match Day memakai durasi yang sama dan tersusun otomatis tanpa jeda. Batas akhir setiap Match Day adalah pukul <b>23.59 WIB</b>. Jadwal Match Day berikutnya tetap berjalan sesuai tanggal yang sudah ditentukan, meskipun Match Day sebelumnya terlambat selesai.</div>`,()=>{
+  const startDate=formVal('deadlineStartDate'),days=Number(formVal('deadlineDuration'));
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(startDate)||addCalendarDays(startDate,0)!==startDate||!Number.isInteger(days)||days<1||days>365){toast('Isi tanggal mulai dan durasi 1–365 hari dengan benar.');return false}
+  t.matchdayDeadlineSettings={startDate,days};
+  save();render();toast(`Deadline otomatis diatur mulai ${formatWIBDate(startDate)} dengan durasi ${days} hari per Match Day.`);return true;
  });
 }
-async function shareMatchday(round,isReshare=false){
+function getMatchdayDeadline(t,round){
+ const config=t?.matchdayDeadlineSettings;
+ if(!config?.startDate||!Number.isInteger(Number(config.days))||Number(config.days)<1)return null;
+ const startDate=addCalendarDays(config.startDate,Number(round)*Number(config.days));
+ const deadlineDate=addCalendarDays(startDate,Number(config.days));
+ return {startDate,deadlineDate,days:Number(config.days)};
+}
+async function shareMatchday(round){
  const t=active();if(!t)return;
  let games=db.matches.filter(m=>m.tournamentId===t.id&&(t.format==='league'?(m.roundIndex??0)===Number(round):t.format==='knockout'?(!m.group&&(m.roundIndex??0)===Number(round)):m.group&&(m.roundIndex??0)===Number(round))).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));
  if(!games.length){toast('Tidak ada pertandingan pada MD yang dipilih.');return}
- const key=String(round),config=t.matchdayDeadlines?.[key];
- if(!config?.days){toast('Atur deadline Match Day ini terlebih dahulu.');setMatchdayDeadline(round);return}
- const now=new Date(),today=deadlineDateFromNow(0);
- // Pembagian pertama menyimpan tanggal awal; pembagian ulang memulai ulang hitungan deadline.
- if(isReshare||!config.sharedAt){
-  config.sharedAt=now.toISOString();
-  config.sharedDate=today;
-  config.deadlineDate=deadlineDateFromNow(config.days);
-  config.deadlineTime='23:59';
- }
- const btn=document.querySelector(`[data-action="${isReshare?'reshareMatchday':'shareMatchday'}"][data-round="${CSS.escape(String(round))}"]`);
+ const deadline=getMatchdayDeadline(t,Number(round));
+ if(t.format!=='knockout'&&!deadline){toast('Atur deadline turnamen terlebih dahulu.');setMatchdayDeadline();return}
+ const legacyConfig=t.matchdayDeadlines?.[String(round)];
+ const effectiveDeadline=deadline||(legacyConfig?.deadlineDate?{startDate:legacyConfig.sharedDate||deadlineDateFromNow(0),deadlineDate:legacyConfig.deadlineDate,days:legacyConfig.days||2}:null);
+ const btn=document.querySelector(`[data-action="shareMatchday"][data-round="${CSS.escape(String(round))}"]`);
  if(btn){btn.disabled=true;btn.dataset.oldText=btn.textContent;btn.textContent='Membuat poster HD+…'}
  try{
   await preloadPosterLogos(games.flatMap(m=>[db.clubs.find(c=>c.id===m.home),db.clubs.find(c=>c.id===m.away)]));
@@ -596,13 +611,13 @@ async function shareMatchday(round,isReshare=false){
    return [`PERTANDINGAN ${i+1}`,`${an} VS ${bn}`,'',`• ${an.padEnd(width,' ')} : ${waPhone(a)}`,`• ${bn.padEnd(width,' ')} : ${waPhone(b)}`].join('\n');
   }).join('\n\n────────────────────\n\n');
   const deadlineText=[
-   isReshare?'PEMBARUAN JADWAL':'JADWAL PERTANDINGAN',
+   'JADWAL PERTANDINGAN',
    `MATCH DAY ${Number(round)+1}`,
    '',
-   'DEADLINE PERTANDINGAN',
-   `Jadwal dibagikan : ${formatWIBDate(config.sharedDate)}`,
-   `Durasi           : ${config.days} Hari`,
-   `Batas akhir      : ${formatWIBDate(config.deadlineDate)}, 23.59 WIB`,
+   'PERIODE PERTANDINGAN',
+   `Mulai            : ${formatWIBDate(effectiveDeadline?.startDate||deadlineDateFromNow(0))}`,
+   `Durasi           : ${effectiveDeadline?.days||2} Hari`,
+   `Batas akhir      : ${formatWIBDate(effectiveDeadline?.deadlineDate||deadlineDateFromNow(2))}, 23.59 WIB`,
    '',
    'Seluruh pertandingan wajib selesai sebelum batas waktu berakhir.',
    '',
@@ -614,8 +629,7 @@ async function shareMatchday(round,isReshare=false){
    'Junjung tinggi sportivitas.'
   ].join('\n');
   const caption='```\n'+deadlineText+'\n```';
-  save();
-  await shareImageSet(files,`${isReshare?'Pembaruan Jadwal':'Jadwal'} MD ${Number(round)+1}`,caption);
+  await shareImageSet(files,`Jadwal MD ${Number(round)+1}`,caption);
  }catch(err){console.error(err);toast(err.message||'Gagal membuat poster jadwal.')}
  finally{if(btn){btn.disabled=false;btn.textContent=btn.dataset.oldText||'Bagikan Jadwal'}}
 }
@@ -808,7 +822,7 @@ function shareTournamentInfo(id){
  }
  window.open('https://wa.me/?text='+encodeURIComponent(lines.join('\n')),'_blank','noopener,noreferrer');
 }
-function action(a,id){let c=db.clubs.find(x=>x.id===id),t=db.tournaments.find(x=>x.id===id);switch(a){case'shareTournamentInfo':shareTournamentInfo(id);break;case'newTournament':newTournament();break;case'editTournament':newTournament(t);break;case'selectTournament':db.activeTournament=id;page='clubs';save();nav('clubs');break;case'deleteTournament':if(confirm('Hapus turnamen ini beserta hasil dan jadwalnya?')){db.tournaments=db.tournaments.filter(x=>x.id!==id);db.draws=db.draws.filter(x=>x.tournamentId!==id);db.matches=db.matches.filter(x=>x.tournamentId!==id);if(db.activeTournament===id)db.activeTournament=db.tournaments[0]?.id||null;save();log('Hapus turnamen',{id});render()}break;case'newClub':newClub();break;case'bulkClubs':bulkClubs();break;case'editClub':newClub(c);break;case'deleteClub':if(confirm(`Hapus klub ${c.name}?`)){db.clubs=db.clubs.filter(x=>x.id!==id);db.tournaments.forEach(x=>x.clubIds=x.clubIds.filter(y=>y!==id));save();log('Hapus klub',{name:c.name});render()}break;case'runDraw':runDraw();break;case'replayDraw':{const d=getDraw();if(!d){toast('Hasil undian belum ada.');break}animateDraw(d);break;}case'resetDraw':if(confirm('Hapus hasil undian dan jadwal turnamen ini?')){db.draws=db.draws.filter(x=>x.tournamentId!==active().id);db.matches=db.matches.filter(x=>x.tournamentId!==active().id);save();log('Reset undian');render()}break;case'newMatch':newMatch();break;case'editScore':editScore(id);break;case'deleteMatch':if(confirm('Hapus jadwal ini?')){db.matches=db.matches.filter(x=>x.id!==id);save();render()}break;case'shareMatch':shareMatch(id);break;case'shareMatchday':shareMatchday(id,false);break;case'reshareMatchday':shareMatchday(id,true);break;case'setMatchdayDeadline':setMatchdayDeadline(id);break;case'shareResultsMD':shareResultsMD(Number(id));break;case'shareKOSchedule':shareMatchday(id);break;case'shareKORound':shareKORound(Number(id));break;case'shareActualSchedule':shareActualPage('schedule');break;case'shareActualStandings':active()?.format==='league'?shareLeagueTable():shareGroupChart();break;case'animateLeague':animateLeague();break;case'shareLeagueTable':shareLeagueTable();break;case'shareGroupChart':shareGroupChart();break;case'shareKOChart':shareKOChart();break;case'generateKO':generateKO();break;case'generateLeague':generateLeague();break;case'shareDrawVideo':shareDrawVideo();break;case'verifyDraw':verifyDraw();break;case'backup':{
+function action(a,id){let c=db.clubs.find(x=>x.id===id),t=db.tournaments.find(x=>x.id===id);switch(a){case'shareTournamentInfo':shareTournamentInfo(id);break;case'newTournament':newTournament();break;case'editTournament':newTournament(t);break;case'selectTournament':db.activeTournament=id;page='clubs';save();nav('clubs');break;case'deleteTournament':if(confirm('Hapus turnamen ini beserta hasil dan jadwalnya?')){db.tournaments=db.tournaments.filter(x=>x.id!==id);db.draws=db.draws.filter(x=>x.tournamentId!==id);db.matches=db.matches.filter(x=>x.tournamentId!==id);if(db.activeTournament===id)db.activeTournament=db.tournaments[0]?.id||null;save();log('Hapus turnamen',{id});render()}break;case'newClub':newClub();break;case'bulkClubs':bulkClubs();break;case'editClub':newClub(c);break;case'deleteClub':if(confirm(`Hapus klub ${c.name}?`)){db.clubs=db.clubs.filter(x=>x.id!==id);db.tournaments.forEach(x=>x.clubIds=x.clubIds.filter(y=>y!==id));save();log('Hapus klub',{name:c.name});render()}break;case'runDraw':runDraw();break;case'replayDraw':{const d=getDraw();if(!d){toast('Hasil undian belum ada.');break}animateDraw(d);break;}case'resetDraw':if(confirm('Hapus hasil undian dan jadwal turnamen ini?')){db.draws=db.draws.filter(x=>x.tournamentId!==active().id);db.matches=db.matches.filter(x=>x.tournamentId!==active().id);save();log('Reset undian');render()}break;case'newMatch':newMatch();break;case'editScore':editScore(id);break;case'deleteMatch':if(confirm('Hapus jadwal ini?')){db.matches=db.matches.filter(x=>x.id!==id);save();render()}break;case'shareMatch':shareMatch(id);break;case'shareMatchday':shareMatchday(id);break;case'setMatchdayDeadline':setMatchdayDeadline();break;case'generateHybridSchedule':generateHybridSchedule();break;case'shareResultsMD':shareResultsMD(Number(id));break;case'shareKOSchedule':shareMatchday(id);break;case'shareKORound':shareKORound(Number(id));break;case'shareActualSchedule':shareActualPage('schedule');break;case'shareActualStandings':active()?.format==='league'?shareLeagueTable():shareGroupChart();break;case'animateLeague':animateLeague();break;case'shareLeagueTable':shareLeagueTable();break;case'shareGroupChart':shareGroupChart();break;case'shareKOChart':shareKOChart();break;case'generateKO':generateKO();break;case'generateLeague':generateLeague();break;case'shareDrawVideo':shareDrawVideo();break;case'verifyDraw':verifyDraw();break;case'backup':{
  const payload={
   app:'FOOTBALL CLUB DRAW',
   backupFormat:'FCD_FULL_BACKUP',
@@ -822,7 +836,7 @@ function action(a,id){let c=db.clubs.find(x=>x.id===id),t=db.tournaments.find(x=
  toast(`Backup lengkap berhasil dibuat. ${db.tournaments.length} turnamen, ${db.clubs.length} klub, ${db.draws.length} hasil undian, ${db.matches.length} pertandingan, dan ${notes.length} catatan.`);
  break;
 }case'restore':$('#restoreFile').click();break;case'saveSettings':db.settings.name=$('#settingName').value;db.settings.waPrefix=$('#settingPrefix').value.replace(/\D/g,'')||'62';save();log('Ubah pengaturan');toast('Pengaturan disimpan.');break;case'previewMedia':mediaDraw();break;case'recordMedia':startRecording();break;case'stopMedia':stopRecording();break;case'exportPNG':exportCanvas('png');break;case'exportJPG':exportCanvas('jpg');break;case'installHelp':toast('Gunakan Chrome → menu ⋮ → Instal aplikasi / Tambahkan ke layar utama.');break;case'newNote':editNoteForm();break;case'editNote':editNoteForm(notes.find(n=>n.id===id));break;case'deleteNote':{const n=notes.find(x=>x.id===id);if(n&&confirm(`Hapus catatan \"${n.title}\"?`)){notes=notes.filter(x=>x.id!==id);saveNotes();render();toast('Catatan dihapus.')}break}case'shareNote':{const n=notes.find(x=>x.id===id);if(n){const text=n.content;window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');}break}}}
-document.addEventListener('click',e=>{let n=e.target.closest('[data-page]');if(n){nav(n.dataset.page);return}let g=e.target.closest('[data-go]');if(g){nav(g.dataset.go);return}let a=e.target.closest('[data-action]');if(a){action(a.dataset.action,['shareMatchday','reshareMatchday','setMatchdayDeadline','shareResultsMD','shareKOSchedule','shareKORound'].includes(a.dataset.action)?a.dataset.round:a.dataset.id)}});
+document.addEventListener('click',e=>{let n=e.target.closest('[data-page]');if(n){nav(n.dataset.page);return}let g=e.target.closest('[data-go]');if(g){nav(g.dataset.go);return}let a=e.target.closest('[data-action]');if(a){action(a.dataset.action,['shareMatchday','shareResultsMD','shareKOSchedule','shareKORound'].includes(a.dataset.action)?a.dataset.round:a.dataset.id)}});
 $('#menuToggle').onclick=()=>$('#sidebar').classList.toggle('open');
 $('#restoreFile').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;
