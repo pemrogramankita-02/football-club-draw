@@ -870,44 +870,109 @@ function action(a,id){let c=db.clubs.find(x=>x.id===id),t=db.tournaments.find(x=
 }case'restore':$('#restoreFile').click();break;case'saveSettings':db.settings.name=$('#settingName').value;db.settings.waPrefix=$('#settingPrefix').value.replace(/\D/g,'')||'62';save();log('Ubah pengaturan');toast('Pengaturan disimpan.');break;case'previewMedia':mediaDraw();break;case'recordMedia':startRecording();break;case'stopMedia':stopRecording();break;case'exportPNG':exportCanvas('png');break;case'exportJPG':exportCanvas('jpg');break;case'installHelp':toast('Gunakan Chrome → menu ⋮ → Instal aplikasi / Tambahkan ke layar utama.');break;case'newNote':editNoteForm();break;case'editNote':editNoteForm(notes.find(n=>n.id===id));break;case'deleteNote':{const n=notes.find(x=>x.id===id);if(n&&confirm(`Hapus catatan \"${n.title}\"?`)){notes=notes.filter(x=>x.id!==id);saveNotes();render();toast('Catatan dihapus.')}break}case'shareNote':{const n=notes.find(x=>x.id===id);if(n){const text=n.content;window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');}break}}}
 document.addEventListener('click',e=>{let n=e.target.closest('[data-page]');if(n){nav(n.dataset.page);return}let g=e.target.closest('[data-go]');if(g){nav(g.dataset.go);return}let a=e.target.closest('[data-action]');if(a){action(a.dataset.action,['shareMatchday','shareResultsMD','shareKOSchedule','shareKORound','setFlexibleMatchdayDeadline','resetMatchdayDeadline'].includes(a.dataset.action)?a.dataset.round:a.dataset.id)}});
 $('#menuToggle').onclick=()=>$('#sidebar').classList.toggle('open');
+function mergeRestoreData(restoredData,restoredNotes){
+ const clone=value=>JSON.parse(JSON.stringify(value));
+ const idMap=(incoming,existing)=>{
+  const map=new Map(),known=new Set(existing.map(x=>x.id).filter(Boolean));
+  for(const item of incoming){
+   if(!item||typeof item!=='object')continue;
+   const id=item.id||uid();
+   if(known.has(id)){map.set(id,id);continue;}
+   map.set(id,id);known.add(id);
+  }
+  return map;
+ };
+ const counts={clubs:0,tournaments:0,draws:0,matches:0,notes:0};
+ const clubMap=idMap(restoredData.clubs,db.clubs);
+ for(const source of restoredData.clubs){
+  if(!source||typeof source!=='object')continue;
+  const id=source.id||uid();
+  if(db.clubs.some(x=>x.id===id))continue;
+  db.clubs.push({...clone(source),id});counts.clubs++;
+ }
+ const tournamentMap=idMap(restoredData.tournaments,db.tournaments);
+ for(const source of restoredData.tournaments){
+  if(!source||typeof source!=='object')continue;
+  const id=source.id||uid();
+  if(db.tournaments.some(x=>x.id===id))continue;
+  const item=clone(source);item.id=id;
+  if(Array.isArray(item.clubIds))item.clubIds=item.clubIds.map(cid=>clubMap.get(cid)||cid);
+  db.tournaments.push(item);counts.tournaments++;
+ }
+ for(const source of restoredData.draws){
+  if(!source||typeof source!=='object')continue;
+  const id=source.id||uid();
+  if(db.draws.some(x=>x.id===id))continue;
+  const item=clone(source);item.id=id;
+  item.tournamentId=tournamentMap.get(item.tournamentId)||item.tournamentId;
+  if(Array.isArray(item.snapshot))item.snapshot=item.snapshot.map(c=>({...c,id:clubMap.get(c.id)||c.id}));
+  if(Array.isArray(item.groups))item.groups=item.groups.map(g=>({...g,
+   ...(Array.isArray(g.clubs)?{clubs:g.clubs.map(c=>typeof c==='object'?({...c,id:clubMap.get(c.id)||c.id}):clubMap.get(c)||c)}:{}),
+   ...(Array.isArray(g.ids)?{ids:g.ids.map(cid=>clubMap.get(cid)||cid)}:{})
+  }));
+  db.draws.push(item);counts.draws++;
+ }
+ for(const source of restoredData.matches){
+  if(!source||typeof source!=='object')continue;
+  const id=source.id||uid();
+  if(db.matches.some(x=>x.id===id))continue;
+  const item=clone(source);item.id=id;
+  item.tournamentId=tournamentMap.get(item.tournamentId)||item.tournamentId;
+  for(const key of ['home','away','winnerId'])if(item[key])item[key]=clubMap.get(item[key])||item[key];
+  db.matches.push(item);counts.matches++;
+ }
+ if(Array.isArray(restoredNotes)){
+  const known=new Set(notes.map(n=>n.id).filter(Boolean));
+  for(const source of restoredNotes){
+   if(!source||typeof source!=='object')continue;
+   const id=source.id||uid();if(known.has(id))continue;
+   notes.push({...clone(source),id});known.add(id);counts.notes++;
+  }
+  saveNotes();
+ }
+ // Pengaturan lokal tidak ditimpa oleh file backup. Pertahankan turnamen aktif saat ini.
+ if(!db.activeTournament||!db.tournaments.some(t=>t.id===db.activeTournament)){
+  const incomingActive=tournamentMap.get(restoredData.activeTournament);
+  db.activeTournament=incomingActive||db.tournaments[0]?.id||null;
+ }
+ save();
+ return counts;
+}
 $('#restoreFile').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;
  try{
   const parsed=JSON.parse(await f.text());
   let restoredData,restoredNotes=null;
-  // Format backup lengkap versi 2.
   if(parsed?.backupFormat==='FCD_FULL_BACKUP'&&parsed.appData){
    restoredData=parsed.appData;
    if(!Array.isArray(parsed.notes))throw Error('Bagian catatan pada backup tidak valid.');
    restoredNotes=parsed.notes;
-  }else{
-   // Kompatibilitas dengan file backup versi lama yang hanya berisi data utama.
-   restoredData=parsed;
-  }
-  if(!restoredData||!Array.isArray(restoredData.clubs)||!Array.isArray(restoredData.tournaments)||
-     !Array.isArray(restoredData.draws)||!Array.isArray(restoredData.matches)){
+  }else restoredData=parsed;
+  if(!restoredData||!Array.isArray(restoredData.clubs)||!Array.isArray(restoredData.tournaments)||!Array.isArray(restoredData.draws)||!Array.isArray(restoredData.matches)){
    throw Error('Format backup tidak dikenali atau data tidak lengkap.');
   }
   if(restoredNotes!==null&&!Array.isArray(restoredNotes))throw Error('Format catatan tidak valid.');
-  if(confirm('Restore akan mengganti data aplikasi saat ini. Lanjutkan?')){
+  if(confirm('Restore akan MENAMBAHKAN data dari backup ke data yang sudah ada. Data lama tidak diganti. Data dengan ID yang sama tidak akan digandakan. Lanjutkan?')){
    delete restoredData.audit;
-   db={...blank(),...restoredData,settings:{...blank().settings,...(restoredData.settings||{})}};
-   if(restoredNotes!==null){
-    notes=restoredNotes;
-    saveNotes();
-   }
-   save();
-   log('Restore backup lengkap',{notes:notes.length});
+   const added=mergeRestoreData(restoredData,restoredNotes);
    render();
-   toast(`Restore berhasil. ${db.tournaments.length} turnamen, ${db.clubs.length} klub, ${db.draws.length} hasil undian, ${db.matches.length} pertandingan, dan ${notes.length} catatan tersedia.`);
+   toast(`Restore selesai: +${added.tournaments} turnamen, +${added.clubs} klub, +${added.draws} hasil undian, +${added.matches} pertandingan, +${added.notes} catatan. Data sebelumnya tetap dipertahankan.`);
   }
- }catch(err){
-  toast('Gagal restore: '+err.message);
- }finally{
-  e.target.value='';
- }
+ }catch(err){toast('Gagal restore: '+err.message)}finally{e.target.value=''}
 };
 $('#mediaOrientation')?.addEventListener('change',mediaDraw);
-if('serviceWorker'in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
+if('serviceWorker'in navigator&&location.protocol!=='file:')window.addEventListener('load',async()=>{
+ try{
+  const reg=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
+  reg.update().catch(()=>{});
+  const reloadKey='fcd_sw_auto_reloaded';
+  if(sessionStorage.getItem(reloadKey)==='1')sessionStorage.removeItem(reloadKey);
+  navigator.serviceWorker.addEventListener('controllerchange',()=>{
+   if(sessionStorage.getItem(reloadKey)==='1')return;
+   sessionStorage.setItem(reloadKey,'1');
+   location.reload();
+  });
+ }catch(err){console.warn('Pembaruan aplikasi tidak dapat diperiksa:',err)}
+});
 nav('dashboard');
 })();
