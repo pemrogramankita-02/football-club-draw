@@ -412,3 +412,14 @@ footer{color:#a9b8c7 !important;border-color:#405367 !important}
   .btn,.nav-item,.field input,.field select,.field textarea{font-size:16px !important}
   .league-fixture{background:#273442 !important}
 }
+
+/* KONTRAS TEKS: pastikan seluruh tulisan terbaca pada tema gelap */
+.hero{background:linear-gradient(135deg,#273f54 0%,#202a36 100%) !important;color:#f4f7fa !important;border:1px solid #52718a !important}
+.hero h1,.hero h2,.hero h3,.hero strong,.hero b{color:#f4f7fa !important}
+.hero p,.hero .eyebrow,.hero small,.hero span{color:#d5e4ef !important}
+.stat,.stat-card{background:#202a36 !important;color:#f4f7fa !important;border-color:#405367 !important}
+.stat strong,.stat-card strong,.stat .value,.stat-card .value{color:#f4d77b !important;opacity:1 !important}
+.stat span,.stat-card span,.stat small,.stat-card small,.stat p,.stat-card p{color:#d5e4ef !important;opacity:1 !important}
+.content,.content p,.content li,.content label,.content small{color:#d5e0e9}
+.content h1,.content h2,.content h3,.content h4,.content strong{color:#f4f7fa}
+.muted,.hint,.tiny,.eyebrow{opacity:1 !important}
