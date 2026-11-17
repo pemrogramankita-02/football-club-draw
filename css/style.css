@@ -423,3 +423,17 @@ footer{color:#a9b8c7 !important;border-color:#405367 !important}
 .content,.content p,.content li,.content label,.content small{color:#d5e0e9}
 .content h1,.content h2,.content h3,.content h4,.content strong{color:#f4f7fa}
 .muted,.hint,.tiny,.eyebrow{opacity:1 !important}
+
+
+/* PERBAIKAN KONTRAS NAMA KLUB PADA KARTU PERTANDINGAN */
+.league-fixture .league-side b,
+.league-fixture .league-side strong,
+.league-fixture .league-side span,
+.league-fixture .league-vs .league-side {
+  color:#f4f7fa !important;
+  opacity:1 !important;
+  font-family:'Roboto',Arial,sans-serif !important;
+  font-weight:700 !important;
+  text-shadow:0 1px 2px rgba(0,0,0,.35) !important;
+}
+.league-fixture .league-side b {font-size:16px !important;line-height:1.4 !important}
