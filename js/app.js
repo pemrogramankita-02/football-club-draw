@@ -9,7 +9,7 @@ const $$=s=>[...document.querySelectorAll(s)];
 const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now().toString(36)+Math.random().toString(36).slice(2);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const blank=()=>({settings:{name:'Football Club Draw',theme:'charcoal-gold',waPrefix:'62'},tournaments:[],activeTournament:null,clubs:[],draws:[],matches:[]});
-let db=load(),page='dashboard',deferredInstall=null,recording=null,mediaStream=null;
+let db=load(),page='dashboard',deferredInstall=null,recording=null,mediaStream=null,scheduleMatchdaySearch='';
 function loadNotes(){try{const x=JSON.parse(localStorage.getItem(NOTES_KEY)||'[]');return Array.isArray(x)?x:[]}catch{return []}}
 function saveNotes(){localStorage.setItem(NOTES_KEY,JSON.stringify(notes));}
 function load(){try{let data=JSON.parse(localStorage.getItem(KEY)||'{}');delete data.audit;
@@ -20,7 +20,7 @@ function log(){}
 function toast(msg){let n=document.createElement('div');n.className='toast';n.textContent=msg;$('#toasts').append(n);setTimeout(()=>n.remove(),3200)}
 function active(){return db.tournaments.find(t=>t.id===db.activeTournament)||null}
 function clubs(){return db.clubs.filter(c=>!active()||!active().clubIds||active().clubIds.includes(c.id))}
-function logo(c){return c?.logo||`data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path fill="#d9b34b" d="M50 4 91 20 84 72 50 96 16 72 9 20Z"/><text x="50" y="59" text-anchor="middle" font-size="28" font-family="Arial" font-weight="bold" fill="#171717">${esc((c?.name||'FC').split(' ').map(x=>x[0]).slice(0,3).join('').toUpperCase())}</text></svg>`)}`}
+function logo(c){const initials=String(c?.name||'FC').trim().split(/\s+/).filter(Boolean).slice(0,3).map(x=>x[0]).join('').toUpperCase()||'FC';return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="47" fill="#18384b" stroke="#42bce9" stroke-width="4"/><text x="50" y="58" text-anchor="middle" font-size="${initials.length>2?27:36}" font-family="Arial" font-weight="bold" fill="#f5d45e">${esc(initials)}</text></svg>`)}`}
 function fmtDate(d){return d?new Date(d+'T00:00:00').toLocaleDateString('id-ID',{day:'2-digit',month:'short',year:'numeric'}):'-'}
 function renderNavigation(){
  const t=active(),navEl=$('#nav');if(!navEl)return;
@@ -56,7 +56,7 @@ function formVal(name){return $(`#modal [name="${name}"]`)?.value??''}
 function render(){renderNavigation();let v=$('#view');if(page==='dashboard')v.innerHTML=dashboard();if(page==='tournament')v.innerHTML=tournamentPage();if(page==='clubs')v.innerHTML=clubsPage();if(page==='draw')v.innerHTML=drawPage();if(page==='groups')v.innerHTML=groupsPage();if(page==='knockout')v.innerHTML=knockoutPage();if(page==='schedule')v.innerHTML=schedulePage();if(page==='backup')v.innerHTML=backupPage();if(page==='notes')v.innerHTML=notesPage();bindPage()}
 function dashboard(){let t=active(),draw=db.draws.find(d=>d.tournamentId===t?.id),ms=db.matches.filter(m=>m.tournamentId===t?.id),done=ms.filter(m=>m.played).length;return `<div class="hero"><div><div class="eyebrow">SELAMAT DATANG DI RUANG KOMPETISI</div><h2>${esc(t?.name||'Bangun Turnamen Sepak Bola Anda')}</h2><p>${t?`${esc(t.format)} • ${t.groupCount} grup • ${clubs().length} klub terdaftar`:'Buat turnamen, daftarkan klub, lalu jalankan pengundian otomatis dalam satu proses.'}</p><div class="actions"><button class="btn btn-gold" data-go="${t?'draw':'tournament'}">${t?'Mulai Pengundian':'＋ Buat Turnamen'}</button><button class="btn btn-ghost" data-go="clubs">Kelola Klub</button></div></div><div class="hero-mark">🏆</div></div><div class="grid stats"><div class="stat"><small>TURNAMEN AKTIF</small><strong>${t?1:0}</strong><em>${t?'Sedang dikelola':'Belum dipilih'}</em></div><div class="stat"><small>TOTAL KLUB</small><strong>${clubs().length}</strong><em>Peserta kompetisi</em></div><div class="stat"><small>PERTANDINGAN</small><strong>${ms.length}</strong><em>${done} selesai</em></div></div><div class="grid two-col"><section class="panel"><div class="section-head"><div><h2>Ringkasan Kompetisi</h2><p>Status dan tahapan turnamen aktif</p></div></div>${t?`<div class="grid"><div class="rowline"><span class="muted tiny">Format</span><b>${esc(t.format)}</b></div><div class="rowline"><span class="muted tiny">Jumlah grup</span><b>${t.groupCount}</b></div><div class="rowline"><span class="muted tiny">Lolos per grup</span><b>${t.qualifiers}</b></div><div class="rowline"><span class="muted tiny">Status undian</span><b>${draw?'<span class="pill green">Sudah diundi</span>':'<span class="pill">Belum diundi</span>'}</b></div></div>`:`<div class="empty"><b>Belum ada turnamen aktif</b>Buat turnamen baru untuk memulai.</div>`}</section><section class="panel"><div class="section-head"><div><h2>Akses Cepat</h2><p>Kelola proses utama</p></div></div><div class="grid"><button class="btn btn-ghost" data-go="tournament">[TOTAL] Pengaturan turnamen</button><button class="btn btn-ghost" data-go="draw">🎲 Pengundian otomatis</button><button class="btn btn-ghost" data-go="groups">📊 Klasemen grup</button><button class="btn btn-ghost" data-go="backup">⇅ Backup data</button></div></section></div>`}
 function tournamentPage(){return `<div class="section-head"><div><h2>Daftar Turnamen</h2><p>Buat dan pilih kompetisi yang akan dikelola.</p></div><button class="btn btn-gold" data-action="newTournament">＋ Turnamen Baru</button></div><div class="grid">${db.tournaments.length?db.tournaments.map(t=>`<div class="panel"><div class="rowline"><div><b>${esc(t.name)}</b><div class="muted tiny">${({knockout:'Knock-out',hybrid:'Fase Grup + Knock-out',league:'Liga'})[t.format]||t.format} • ${t.clubIds.length} klub${t.format!=='league'&&t.format!=='knockout'?' • '+t.groupCount+' grup':''}</div></div><div class="actions"><span class="pill ${db.activeTournament===t.id?'green':''}">${db.activeTournament===t.id?'Aktif':'Tersimpan'}</span><button class="btn btn-whatsapp btn-sm" data-action="shareTournamentInfo" data-id="${t.id}">Bagikan Info WA</button><button class="btn btn-ghost btn-sm" data-action="selectTournament" data-id="${t.id}">Kelola</button><button class="btn btn-ghost btn-sm" data-action="editTournament" data-id="${t.id}">Edit</button><button class="btn btn-danger btn-sm" data-action="deleteTournament" data-id="${t.id}">Hapus</button></div></div></div>`).join(''):'<div class="empty"><b>Belum ada turnamen</b>Klik Turnamen Baru untuk membuat kompetisi.</div>'}</div>`}
-function clubsPage(){return `<div class="section-head"><div><h2>Data Klub Turnamen</h2><p>Daftar klub ini khusus untuk turnamen <b>${esc(active()?.name||"")}</b>. Perubahan peserta tidak mencampur turnamen lain.</p></div><div class="actions"><button class="btn btn-ghost" data-action="bulkClubs">＋ Tambah Berdasarkan Jumlah</button><button class="btn btn-gold" data-action="newClub">＋ Tambah Klub</button></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Klub</th><th>Kota / Negara</th><th>Kontak WA</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${clubs().map(c=>`<tr><td><div class="club-cell"><img class="club-logo" src="${logo(c)}"><b>${esc(c.name)}</b></div></td><td>${esc(c.location||'-')}</td><td>${esc(c.phone||'-')}</td><td><span class="pill">${c.logoSource==='manual'?'Logo manual':c.logoSource==='wiki'?'Logo ditemukan':'Logo inisial'}</span></td><td><div class="actions"><button class="btn btn-ghost btn-sm" data-action="editClub" data-id="${c.id}">Edit</button><button class="btn btn-danger btn-sm" data-action="deleteClub" data-id="${c.id}">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Belum ada klub terdaftar.</td></tr>'}</tbody></table></div></div>`}
+function clubsPage(){return `<div class="section-head"><div><h2>Data Klub Turnamen</h2><p>Daftar klub ini khusus untuk turnamen <b>${esc(active()?.name||"")}</b>. Perubahan peserta tidak mencampur turnamen lain.</p></div><div class="actions"><button class="btn btn-ghost" data-action="bulkClubs">＋ Tambah Berdasarkan Jumlah</button><button class="btn btn-gold" data-action="newClub">＋ Tambah Klub</button></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Klub</th><th>Kota / Negara</th><th>Kontak WA</th><th>Status</th><th>Aksi</th></tr></thead><tbody>${clubs().map(c=>`<tr><td><div class="club-cell"><img class="club-logo" src="${logo(c)}"><b>${esc(c.name)}</b></div></td><td>${esc(c.location||'-')}</td><td>${esc(c.phone||'-')}</td><td><span class="pill">Inisial nama</span></td><td><div class="actions"><button class="btn btn-ghost btn-sm" data-action="editClub" data-id="${c.id}">Edit</button><button class="btn btn-danger btn-sm" data-action="deleteClub" data-id="${c.id}">Hapus</button></div></td></tr>`).join('')||'<tr><td colspan="5" class="empty">Belum ada klub terdaftar.</td></tr>'}</tbody></table></div></div>`}
 function drawPage(){let t=active(),d=db.draws.find(x=>x.tournamentId===t?.id);if(t?.format==='league'||t?.format==='knockout')return `<div class="empty"><b>Mode ini tidak menggunakan pengundian grup</b>Semua klub akan saling bertemu sesuai jadwal liga. Buka menu Jadwal & Skor lalu tekan Buat Jadwal Liga.</div>`;return `<div class="notice">Pengundian menggunakan metode Free Draw: seluruh klub diacak tanpa pot unggulan. Animasi memperlihatkan proses pengungkapan hasil satu per satu; urutan hasil sudah ditentukan dan disimpan saat pengundian dimulai.</div><div class="section-head"><div><h2>Automatic Draw Room</h2><p>${t?esc(t.name):'Pilih atau buat turnamen terlebih dahulu.'}</p></div></div><div class="draw-stage draw-stage-live" id="drawStage"><div class="draw-machine"><div class="eyebrow">LIVE DRAW EXPERIENCE</div><div class="draw-ball" id="drawBall">⚽</div><div class="draw-status" id="drawStatus">${d?'HASIL PENGUNDIAN SIAP':'MENUNGGU PENGUNDIAN'}</div><div class="draw-club-name" id="drawClubName">${d?'Tekan PUTAR ANIMASI untuk melihat hasil':'Siapkan peserta turnamen Anda'}</div><div class="draw-group-name" id="drawGroupName">${d?`${d.snapshot?.length||d.groups.reduce((n,g)=>n+g.clubs.length,0)} KLUB • ${d.groups.length} GRUP`:'OFFICIAL CLUB DRAW'}</div><div class="draw-progress"><i id="drawProgress"></i></div><div class="draw-count" id="drawCount">${d?'0 / '+(d.snapshot?.length||d.groups.reduce((n,g)=>n+g.clubs.length,0)):'READY'}</div></div>${d?`<div class="draw-live-board" id="drawBoard"><div class="draw-board-heading">PAPAN PENEMPATAN GRUP <span>HASIL MUNCUL BERTAHAP</span></div><div class="draw-board-grid">${d.groups.map((g,gi)=>`<section class="draw-live-group"><header>${esc(g.name)}</header>${g.clubs.map((c,ci)=>`<div class="draw-live-slot" data-slot="${d.groups.slice(0,gi).reduce((n,x)=>n+x.clubs.length,0)+ci}"><span>${String(ci+1).padStart(2,'0')}</span><b>Menunggu klub...</b></div>`).join('')}</section>`).join('')}</div></div>`:''}</div><div class="actions draw-controls"><button class="btn btn-gold" data-action="${d?'replayDraw':'runDraw'}" ${!t?'disabled':''}>${d?'▶ PUTAR ANIMASI HASIL':'🎲 MULAI PENGUNDIAN'}</button>${d?'<button class="btn btn-ghost" data-action="shareDrawVideo">🎥 Video & WhatsApp</button><button class="btn btn-ghost" data-go="groups">Lihat Semua Hasil</button><button class="btn btn-danger" data-action="resetDraw">Reset & Undi Ulang</button>':''}</div>${d?`<div class="section-head"><div><h2>Rekap Hasil Pengundian</h2><p>Semua penempatan klub yang telah disimpan.</p></div></div><div class="grid group-grid">${d.groups.map(g=>`<div class="group-card"><div class="group-title">${esc(g.name)}</div>${g.clubs.map((c,i)=>`<div class="draw-result-row"><span class="draw-result-number">${String(i+1).padStart(2,'0')}</span><img class="club-logo" src="${logo(c)}"><b>${esc(c.name)}</b><span class="pill green">Terundi</span></div>`).join('')}</div>`).join('')}</div><div class="panel tiny muted" style="margin-top:15px">Hash komitmen: <code>${d.commitment}</code><br>Waktu pengundian: ${new Date(d.at).toLocaleString('id-ID')}</div>`:''}`}
 
 let drawAnimationToken=0;
@@ -165,12 +165,13 @@ function matchCard(m){
  let status=m.played?'Selesai':waiting?(m.winnerId?'Bye • otomatis lolos':'Menunggu lawan'):'Belum dimainkan';
  return `<div class="match-card"><div class="muted tiny">${esc(m.round||'Pertandingan')} • #${m.matchNo||''}</div><div class="match-team">${esc(a?.name||'Menunggu pemenang')} <b>${m.played&&m.hs!=null?m.hs:'-'}</b></div><div class="match-team">${esc(b?.name||'Menunggu pemenang')} <b>${m.played&&m.as!=null?m.as:'-'}</b></div><div class="muted tiny">${status}${m.winnerId?' • Pemenang: '+esc(db.clubs.find(c=>c.id===m.winnerId)?.name||'') : ''}</div>${!waiting?`<button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit skor</button>`:'<span class="muted tiny">Menunggu pemenang pertandingan sebelumnya</span>'}</div>`
 }
+function matchdaySearchControl(){return `<div class="panel" style="margin-bottom:14px"><div class="field"><label for="matchdaySearch">Cari Matchday</label><input id="matchdaySearch" type="search" inputmode="numeric" autocomplete="off" placeholder="Ketik nomor Matchday, contoh 50" value="${esc(scheduleMatchdaySearch)}"><div class="muted tiny" style="margin-top:6px">Ketik nomor Matchday untuk langsung menampilkan jadwalnya.</div></div></div>`}
 function schedulePage(){
- let t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id);
+ let t=active(),ms=db.matches.filter(m=>m.tournamentId===t?.id),search=scheduleMatchdaySearch.trim();
  if(t?.format==='league'){
   let rounds=[...new Set(ms.map(m=>m.roundIndex??0))].sort((a,b)=>a-b);
-  let html=rounds.map((r,ri)=>{let games=ms.filter(m=>(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${games.length} pertandingan dalam satu pekan</div>${matchdayDeadlineControls(t,r)}</div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture" data-fixture="${i}"><div class="muted tiny">PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''} ${m.venue?'• '+esc(m.venue):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
-  return `<div class="section-head"><div><h2>Jadwal Liga & Hasil Pertandingan</h2><p>Jadwal pertandingan disusun berdasarkan Matchday.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateLeague">⚽ Buat Ulang Jadwal</button></div></div>${ms.length?html:'<div class="empty"><b>Jadwal liga belum dibuat</b>Tekan Buat Jadwal Liga untuk membuat seluruh Matchday.</div>'}`;
+  let html=rounds.map((r,ri)=>({r,ri})).filter(x=>!search||String(x.ri+1)===search).map(({r,ri})=>{let games=ms.filter(m=>(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${games.length} pertandingan dalam satu pekan</div>${matchdayDeadlineControls(t,r)}</div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture" data-fixture="${i}"><div class="muted tiny">PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''} ${m.venue?'• '+esc(m.venue):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
+  return `<div class="section-head"><div><h2>Jadwal Liga & Hasil Pertandingan</h2><p>Jadwal pertandingan disusun berdasarkan Matchday.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateLeague">⚽ Buat Ulang Jadwal</button></div></div>${ms.length?matchdaySearchControl()+(html||'<div class="empty"><b>Matchday tidak ditemukan</b>Periksa nomor Matchday yang Anda ketik.</div>'):'<div class="empty"><b>Jadwal liga belum dibuat</b>Tekan Buat Jadwal Liga untuk membuat seluruh Matchday.</div>'}`;
  }
  if(t?.format==='hybrid'){
   // Kompatibilitas untuk hasil undian lama: pasangkan fixture lama ke ronde round-robin.
@@ -186,8 +187,8 @@ function schedulePage(){
    });save();
   }
   const roundIds=[...new Set(ms.filter(m=>m.group).map(m=>m.roundIndex??0))].sort((a,b)=>a-b);
-  const html=roundIds.map((r,ri)=>{const games=ms.filter(m=>m.group&&(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${[...new Set(games.map(m=>m.group))].join(' • ')} · ${games.length} pertandingan lintas grup</div>${matchdayDeadlineControls(t,r)}</div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture"><div class="muted tiny">${esc(m.group)} · PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
-  return `<div class="section-head"><div><h2>Jadwal Fase Grup & Hasil</h2><p>Setiap Matchday berisi pertandingan Grup A, B, C, D secara bersamaan.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateHybridSchedule">⚽ Buat Ulang Jadwal</button></div></div>${html||'<div class="empty"><b>Jadwal fase grup belum tersedia</b>Lakukan pengundian untuk membuat jadwal otomatis.</div>'}`;
+  const html=roundIds.map((r,ri)=>({r,ri})).filter(x=>!search||String(x.ri+1)===search).map(({r,ri})=>{const games=ms.filter(m=>m.group&&(m.roundIndex??0)===r).sort((a,b)=>(a.matchNo||0)-(b.matchNo||0));return `<section class="panel league-matchday" style="margin-bottom:14px"><div class="rowline"><div><h3>⚽ Matchday ${ri+1}</h3><div class="muted tiny">${[...new Set(games.map(m=>m.group))].join(' • ')} · ${games.length} pertandingan lintas grup</div>${matchdayDeadlineControls(t,r)}</div><div class="actions"><button class="btn btn-gold btn-sm" data-action="shareMatchday" data-round="${r}">Bagikan Jadwal</button><button class="btn btn-ghost btn-sm" data-action="shareResultsMD" data-round="${r}">Hasil + Klasemen MD ${ri+1}</button></div></div><div class="league-fixtures" data-matchday="${r}">${games.map((m,i)=>{const a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<div class="league-fixture"><div class="muted tiny">${esc(m.group)} · PERTANDINGAN ${i+1}</div><div class="league-vs"><div class="league-side"><img class="club-logo" src="${logo(a||{})}"><b>${esc(a?.name||'TBD')}</b></div><strong>VS</strong><div class="league-side"><img class="club-logo" src="${logo(b||{})}"><b>${esc(b?.name||'TBD')}</b></div></div><div class="muted tiny">${m.played?`Skor ${m.hs} - ${m.as}`:'Belum dimainkan'} ${m.date?'• '+fmtDate(m.date):''} ${m.time?'• '+esc(m.time):''}</div><div class="actions" style="justify-content:center;margin-top:8px"><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input / Edit Skor</button></div></div>`}).join('')}</div></section>`}).join('');
+  return `<div class="section-head"><div><h2>Jadwal Fase Grup & Hasil</h2><p>Setiap Matchday berisi pertandingan Grup A, B, C, D secara bersamaan.</p></div><div class="actions"><button class="btn btn-ghost" data-action="setMatchdayDeadline">Atur Deadline</button><button class="btn btn-ghost" data-action="generateHybridSchedule">⚽ Buat Ulang Jadwal</button></div></div>${html?matchdaySearchControl()+html:(roundIds.length?matchdaySearchControl()+'<div class="empty"><b>Matchday tidak ditemukan</b>Periksa nomor Matchday yang Anda ketik.</div>':'<div class="empty"><b>Jadwal fase grup belum tersedia</b>Lakukan pengundian untuk membuat jadwal otomatis.</div>')}`;
  }
  return `<div class="section-head"><div><h2>Jadwal & Hasil Pertandingan</h2><p>Kelola tanggal, jam, venue, skor dan hasil pertandingan.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareActualSchedule">Bagikan Jadwal • SUPER HD+</button><button class="btn btn-ghost" data-action="newMatch" ${!t?'disabled':''}>＋ Tambah Jadwal</button></div></div><div class="panel"><div class="table-wrap"><table><thead><tr><th>Pertandingan</th><th>Grup / Babak</th><th>Tanggal & Venue</th><th>Skor</th><th>Aksi</th></tr></thead><tbody>${ms.map(m=>{let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);return `<tr><td><b>${esc(a?.name||'TBD')} vs ${esc(b?.name||'TBD')}</b></td><td>${esc(m.group||m.round||'-')}</td><td>${m.date?fmtDate(m.date):'-'} ${m.time||''} ${esc(m.venue||'')}</td><td>${m.played?`${m.hs} - ${m.as}`:'-'}</td><td><button class="btn btn-ghost btn-sm" data-action="editScore" data-id="${m.id}">Input Skor</button></td></tr>`}).join('')}</tbody></table></div></div>`;
 }
@@ -197,8 +198,7 @@ function notesPage(){
  return `<div class="section-head notes-heading"><div><h2>📝 Catatan Saya</h2><p>Kelola aturan, informasi, dan pengumuman turnamen.</p></div><button class="btn btn-gold" data-action="newNote">＋ Buat Catatan Baru</button></div><div class="field notes-search"><input id="noteSearch" placeholder="⌕  Cari catatan..." value="${esc(noteSearch)}"></div><div class="notes-list">${list.length?list.map(n=>`<article class="panel note-card"><div class="note-icon">▤</div><div class="note-main"><h3>${esc(n.title)}</h3><p>${esc(n.content).replace(/\n/g,' ').slice(0,145)}${n.content.length>145?'…':''}</p><small>Diperbarui: ${new Date(n.updatedAt).toLocaleString('id-ID')}</small></div><div class="note-actions"><button class="btn btn-whatsapp btn-sm" data-action="shareNote" data-id="${n.id}" title="Bagikan ke WhatsApp">WhatsApp</button><button class="btn btn-ghost btn-sm" data-action="editNote" data-id="${n.id}">✎</button><button class="btn btn-danger btn-sm" data-action="deleteNote" data-id="${n.id}">Hapus</button></div></article>`).join(''):`<div class="empty"><b>${q?'Catatan tidak ditemukan':'Belum ada catatan'}</b>${q?'Coba kata kunci lain.':'Buat catatan pertama untuk menyimpan aturan atau informasi turnamen.'}</div>`}</div><div class="notice notes-storage">✓ Catatan tersimpan otomatis di perangkat ini. Tetap tersedia setelah web ditutup dan dibuka kembali.</div>`;
 }
 function editNoteForm(n){const editing=!!n;modal(editing?'Edit Catatan':'Buat Catatan Baru',`${field('Judul Catatan','noteTitle',n?.title||'') }<div class="field"><label>Isi Catatan</label><textarea name="noteContent" rows="8" placeholder="Tuliskan aturan, informasi, atau pengumuman...">${esc(n?.content||'')}</textarea></div>`,()=>{const title=formVal('noteTitle').trim(),content=formVal('noteContent').trim();if(!title||!content){toast('Judul dan isi catatan wajib diisi.');return false}const now=new Date().toISOString();if(editing){n.title=title;n.content=content;n.updatedAt=now}else notes.push({id:uid(),title,content,createdAt:now,updatedAt:now});saveNotes();render();toast(editing?'Catatan diperbarui.':'Catatan berhasil disimpan.');});}
-function bindPage(){const input=$('#noteSearch');if(input)input.addEventListener('input',e=>{noteSearch=e.target.value;const pos=e.target.selectionStart;const v=$('#view');v.innerHTML=notesPage();const next=$('#noteSearch');next.focus();next.setSelectionRange(pos,pos);});}
-async function fetchLogo(name){try{let q=encodeURIComponent(name+' football club');let r=await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=${q}&gsrlimit=5&gsrnamespace=0&prop=pageimages&piprop=thumbnail&pithumbsize=180&format=json&origin=*`);let j=await r.json();let p=Object.values(j.query?.pages||{}).find(x=>x.thumbnail?.source);return p?.thumbnail?.source||''}catch{return ''}}
+function bindPage(){const input=$('#noteSearch');if(input)input.addEventListener('input',e=>{noteSearch=e.target.value;const pos=e.target.selectionStart;const v=$('#view');v.innerHTML=notesPage();const next=$('#noteSearch');next.focus();next.setSelectionRange(pos,pos);});const mdInput=$('#matchdaySearch');if(mdInput)mdInput.addEventListener('input',e=>{scheduleMatchdaySearch=e.target.value.replace(/[^0-9]/g,'');const pos=e.target.selectionStart;const v=$('#view');v.innerHTML=schedulePage();bindPage();const next=$('#matchdaySearch');if(next){next.focus();next.setSelectionRange(Math.min(pos,next.value.length),Math.min(pos,next.value.length));}});}
 function tournamentFormatFields(format,t={}){
  let html='';
  if(format==='hybrid') html+=`<div class="form-grid">${field('Jumlah grup','groupCount',t.groupCount||2,'number','min="1" max="32"')}${field('Tim lolos per grup','qualifiers',t.qualifiers||2,'number','min="1" max="8"')}</div><div class="hint">Pengaturan ini digunakan untuk pembagian peserta dan penentuan klub yang lolos.</div>`;
@@ -239,7 +239,7 @@ function newTournament(t){
  });
 }
 function bulkClubs(){modal('Tambah Klub Berdasarkan Jumlah',`${field('Berapa klub yang ingin ditambahkan?','bulkCount','16','number','min="1" max="128"')}<div class="notice">Aplikasi akan membuat nama sementara seperti <b>Klub Baru 01</b>, <b>Klub Baru 02</b>, dan seterusnya. Setelah dibuat, tekan tombol <b>Edit</b> pada setiap klub untuk mengganti namanya.</div>`,()=>{let count=Number(formVal('bulkCount'));if(!Number.isInteger(count)||count<1||count>128){toast('Masukkan jumlah antara 1 sampai 128 klub.');return false}let created=[];for(let i=1;i<=count;i++){let id=uid();created.push({id,name:`Klub Baru ${String(i).padStart(2,'0')}`,location:'',phone:'',logo:'',logoSource:'initial'})}db.clubs.push(...created);let t=active();if(t){t.clubIds=[...new Set([...(t.clubIds||[]),...created.map(c=>c.id)])];t.clubCount=t.clubIds.length}save();log('Tambah klub massal',{jumlah:count,tournament:t?.name||null});render();toast(`${count} klub berhasil ditambahkan. Silakan edit nama klub.`);return true},'Buat Klub')}
-function newClub(c){modal(c?'Edit Klub':'Tambah Klub',`${field('Nama klub','name',c?.name||'')}${field('Kota / Negara','location',c?.location||'')}${field('Nomor WhatsApp (opsional)','phone',c?.phone||'','tel')}${field('Unggah logo (opsional)','logoFile','','file','accept="image/*"')}<p class="hint">Jika logo tidak diunggah, aplikasi mencoba mencari thumbnail Wikipedia berdasarkan nama klub. Pastikan hasilnya benar; logo inisial akan digunakan bila tidak ditemukan.</p>`,()=>{let name=formVal('name').trim();if(!name){toast('Nama klub wajib diisi.');return false}let file=$('#modal [name=logoFile]').files[0];let done=logoData=>{let obj={id:c?.id||uid(),name,location:formVal('location'),phone:formVal('phone'),logo:logoData||c?.logo||'',logoSource:file?'manual':c?.logoSource||'initial'};if(c)db.clubs=db.clubs.map(x=>x.id===c.id?obj:x);else{db.clubs.push(obj);let current=active();if(current&&!current.clubIds.includes(obj.id)){current.clubIds.push(obj.id);current.clubCount=current.clubIds.length}}save();log(c?'Edit klub':'Tambah klub',{name});render()};if(file){if(file.size>1500000){toast('Ukuran logo maksimal 1,5 MB.');return false}let r=new FileReader();r.onload=()=>done(r.result);r.readAsDataURL(file)}else if(!c){fetchLogo(name).then(url=>done(url?url:''))}else done(c.logo);return true})}
+function newClub(c){modal(c?'Edit Klub':'Tambah Klub',`${field('Nama klub','name',c?.name||'')}${field('Kota / Negara','location',c?.location||'')}${field('Nomor WhatsApp (opsional)','phone',c?.phone||'','tel')}<p class="hint">Logo klub dibuat otomatis dari inisial nama klub. Tidak menggunakan pencarian gambar atau unggahan logo.</p>`,()=>{let name=formVal('name').trim();if(!name){toast('Nama klub wajib diisi.');return false}let obj={id:c?.id||uid(),name,location:formVal('location'),phone:formVal('phone'),logo:'',logoSource:'initial'};if(c)db.clubs=db.clubs.map(x=>x.id===c.id?obj:x);else{db.clubs.push(obj);let current=active();if(current&&!current.clubIds.includes(obj.id)){current.clubIds.push(obj.id);current.clubCount=current.clubIds.length}}save();log(c?'Edit klub':'Tambah klub',{name});render();return true})}
 function buildGroupRounds(clubList){
  let pool=[...clubList];if(pool.length%2)pool.push(null);
  const n=pool.length;if(n<2)return [];
@@ -440,15 +440,9 @@ function buildStandingsAtRound(clubs,matches,round,groupName=''){
  });
  return rows.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gf-a.gf||b.gd-a.gd||a.ga-b.ga||a.club.name.localeCompare(b.club.name));
 }
-const posterLogoCache=new Map();
-async function preloadPosterLogos(clubs){
- const unique=[...new Map(clubs.filter(Boolean).map(c=>[c.id,c])).values()];
- await Promise.all(unique.map(club=>new Promise(resolve=>{
-  const src=logo(club);if(posterLogoCache.has(src)){resolve();return}
-  const im=new Image();im.crossOrigin='anonymous';im.onload=()=>{posterLogoCache.set(src,im);resolve()};im.onerror=()=>{posterLogoCache.set(src,null);resolve()};im.src=src;
- })));
-}
-function paintClubLogo(ctx,club,x,y,size){const im=posterLogoCache.get(logo(club||{}));if(im){ctx.save();ctx.beginPath();ctx.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);ctx.clip();ctx.drawImage(im,x,y,size,size);ctx.restore()}else{ctx.fillStyle='#18384b';ctx.strokeStyle='#42bce9';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#f5d45e';ctx.font='700 16px Roboto,Arial';ctx.textAlign='center';ctx.fillText(String(club?.name||'FC').split(/\s+/).map(z=>z[0]).slice(0,3).join('').toUpperCase(),x+size/2,y+size/2+6)}}
+function initialsForClub(club){return String(club?.name||'FC').trim().split(/\s+/).filter(Boolean).slice(0,3).map(z=>z[0]).join('').toUpperCase()||'FC'}
+async function preloadPosterLogos(clubs){return Promise.resolve()}
+function paintClubLogo(ctx,club,x,y,size){ctx.save();ctx.fillStyle='#18384b';ctx.strokeStyle='#42bce9';ctx.lineWidth=Math.max(2,size*.035);ctx.beginPath();ctx.arc(x+size/2,y+size/2,size/2,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#f5d45e';ctx.font=`700 ${size*(initialsForClub(club).length>2?.34:.44)}px Roboto,Arial`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(initialsForClub(club),x+size/2,y+size/2);ctx.restore()}
 function posterBase(ctx,w,h,title,subtitle,pageLabel=''){
  const g=ctx.createLinearGradient(0,0,w,h);g.addColorStop(0,'#101820');g.addColorStop(.5,'#1c2b38');g.addColorStop(1,'#0b1219');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
  const glow=ctx.createRadialGradient(w*.5,0,10,w*.5,h*.25,h*.9);glow.addColorStop(0,'rgba(42,166,220,.28)');glow.addColorStop(1,'rgba(8,15,22,0)');ctx.fillStyle=glow;ctx.fillRect(0,0,w,h);
@@ -870,109 +864,44 @@ function action(a,id){let c=db.clubs.find(x=>x.id===id),t=db.tournaments.find(x=
 }case'restore':$('#restoreFile').click();break;case'saveSettings':db.settings.name=$('#settingName').value;db.settings.waPrefix=$('#settingPrefix').value.replace(/\D/g,'')||'62';save();log('Ubah pengaturan');toast('Pengaturan disimpan.');break;case'previewMedia':mediaDraw();break;case'recordMedia':startRecording();break;case'stopMedia':stopRecording();break;case'exportPNG':exportCanvas('png');break;case'exportJPG':exportCanvas('jpg');break;case'installHelp':toast('Gunakan Chrome → menu ⋮ → Instal aplikasi / Tambahkan ke layar utama.');break;case'newNote':editNoteForm();break;case'editNote':editNoteForm(notes.find(n=>n.id===id));break;case'deleteNote':{const n=notes.find(x=>x.id===id);if(n&&confirm(`Hapus catatan \"${n.title}\"?`)){notes=notes.filter(x=>x.id!==id);saveNotes();render();toast('Catatan dihapus.')}break}case'shareNote':{const n=notes.find(x=>x.id===id);if(n){const text=n.content;window.open('https://wa.me/?text='+encodeURIComponent(text),'_blank','noopener');}break}}}
 document.addEventListener('click',e=>{let n=e.target.closest('[data-page]');if(n){nav(n.dataset.page);return}let g=e.target.closest('[data-go]');if(g){nav(g.dataset.go);return}let a=e.target.closest('[data-action]');if(a){action(a.dataset.action,['shareMatchday','shareResultsMD','shareKOSchedule','shareKORound','setFlexibleMatchdayDeadline','resetMatchdayDeadline'].includes(a.dataset.action)?a.dataset.round:a.dataset.id)}});
 $('#menuToggle').onclick=()=>$('#sidebar').classList.toggle('open');
-function mergeRestoreData(restoredData,restoredNotes){
- const clone=value=>JSON.parse(JSON.stringify(value));
- const idMap=(incoming,existing)=>{
-  const map=new Map(),known=new Set(existing.map(x=>x.id).filter(Boolean));
-  for(const item of incoming){
-   if(!item||typeof item!=='object')continue;
-   const id=item.id||uid();
-   if(known.has(id)){map.set(id,id);continue;}
-   map.set(id,id);known.add(id);
-  }
-  return map;
- };
- const counts={clubs:0,tournaments:0,draws:0,matches:0,notes:0};
- const clubMap=idMap(restoredData.clubs,db.clubs);
- for(const source of restoredData.clubs){
-  if(!source||typeof source!=='object')continue;
-  const id=source.id||uid();
-  if(db.clubs.some(x=>x.id===id))continue;
-  db.clubs.push({...clone(source),id});counts.clubs++;
- }
- const tournamentMap=idMap(restoredData.tournaments,db.tournaments);
- for(const source of restoredData.tournaments){
-  if(!source||typeof source!=='object')continue;
-  const id=source.id||uid();
-  if(db.tournaments.some(x=>x.id===id))continue;
-  const item=clone(source);item.id=id;
-  if(Array.isArray(item.clubIds))item.clubIds=item.clubIds.map(cid=>clubMap.get(cid)||cid);
-  db.tournaments.push(item);counts.tournaments++;
- }
- for(const source of restoredData.draws){
-  if(!source||typeof source!=='object')continue;
-  const id=source.id||uid();
-  if(db.draws.some(x=>x.id===id))continue;
-  const item=clone(source);item.id=id;
-  item.tournamentId=tournamentMap.get(item.tournamentId)||item.tournamentId;
-  if(Array.isArray(item.snapshot))item.snapshot=item.snapshot.map(c=>({...c,id:clubMap.get(c.id)||c.id}));
-  if(Array.isArray(item.groups))item.groups=item.groups.map(g=>({...g,
-   ...(Array.isArray(g.clubs)?{clubs:g.clubs.map(c=>typeof c==='object'?({...c,id:clubMap.get(c.id)||c.id}):clubMap.get(c)||c)}:{}),
-   ...(Array.isArray(g.ids)?{ids:g.ids.map(cid=>clubMap.get(cid)||cid)}:{})
-  }));
-  db.draws.push(item);counts.draws++;
- }
- for(const source of restoredData.matches){
-  if(!source||typeof source!=='object')continue;
-  const id=source.id||uid();
-  if(db.matches.some(x=>x.id===id))continue;
-  const item=clone(source);item.id=id;
-  item.tournamentId=tournamentMap.get(item.tournamentId)||item.tournamentId;
-  for(const key of ['home','away','winnerId'])if(item[key])item[key]=clubMap.get(item[key])||item[key];
-  db.matches.push(item);counts.matches++;
- }
- if(Array.isArray(restoredNotes)){
-  const known=new Set(notes.map(n=>n.id).filter(Boolean));
-  for(const source of restoredNotes){
-   if(!source||typeof source!=='object')continue;
-   const id=source.id||uid();if(known.has(id))continue;
-   notes.push({...clone(source),id});known.add(id);counts.notes++;
-  }
-  saveNotes();
- }
- // Pengaturan lokal tidak ditimpa oleh file backup. Pertahankan turnamen aktif saat ini.
- if(!db.activeTournament||!db.tournaments.some(t=>t.id===db.activeTournament)){
-  const incomingActive=tournamentMap.get(restoredData.activeTournament);
-  db.activeTournament=incomingActive||db.tournaments[0]?.id||null;
- }
- save();
- return counts;
-}
 $('#restoreFile').onchange=async e=>{
  const f=e.target.files[0];if(!f)return;
  try{
   const parsed=JSON.parse(await f.text());
   let restoredData,restoredNotes=null;
+  // Format backup lengkap versi 2.
   if(parsed?.backupFormat==='FCD_FULL_BACKUP'&&parsed.appData){
    restoredData=parsed.appData;
    if(!Array.isArray(parsed.notes))throw Error('Bagian catatan pada backup tidak valid.');
    restoredNotes=parsed.notes;
-  }else restoredData=parsed;
-  if(!restoredData||!Array.isArray(restoredData.clubs)||!Array.isArray(restoredData.tournaments)||!Array.isArray(restoredData.draws)||!Array.isArray(restoredData.matches)){
+  }else{
+   // Kompatibilitas dengan file backup versi lama yang hanya berisi data utama.
+   restoredData=parsed;
+  }
+  if(!restoredData||!Array.isArray(restoredData.clubs)||!Array.isArray(restoredData.tournaments)||
+     !Array.isArray(restoredData.draws)||!Array.isArray(restoredData.matches)){
    throw Error('Format backup tidak dikenali atau data tidak lengkap.');
   }
   if(restoredNotes!==null&&!Array.isArray(restoredNotes))throw Error('Format catatan tidak valid.');
-  if(confirm('Restore akan MENAMBAHKAN data dari backup ke data yang sudah ada. Data lama tidak diganti. Data dengan ID yang sama tidak akan digandakan. Lanjutkan?')){
+  if(confirm('Restore akan mengganti data aplikasi saat ini. Lanjutkan?')){
    delete restoredData.audit;
-   const added=mergeRestoreData(restoredData,restoredNotes);
+   db={...blank(),...restoredData,settings:{...blank().settings,...(restoredData.settings||{})}};
+   if(restoredNotes!==null){
+    notes=restoredNotes;
+    saveNotes();
+   }
+   save();
+   log('Restore backup lengkap',{notes:notes.length});
    render();
-   toast(`Restore selesai: +${added.tournaments} turnamen, +${added.clubs} klub, +${added.draws} hasil undian, +${added.matches} pertandingan, +${added.notes} catatan. Data sebelumnya tetap dipertahankan.`);
+   toast(`Restore berhasil. ${db.tournaments.length} turnamen, ${db.clubs.length} klub, ${db.draws.length} hasil undian, ${db.matches.length} pertandingan, dan ${notes.length} catatan tersedia.`);
   }
- }catch(err){toast('Gagal restore: '+err.message)}finally{e.target.value=''}
+ }catch(err){
+  toast('Gagal restore: '+err.message);
+ }finally{
+  e.target.value='';
+ }
 };
 $('#mediaOrientation')?.addEventListener('change',mediaDraw);
-if('serviceWorker'in navigator&&location.protocol!=='file:')window.addEventListener('load',async()=>{
- try{
-  const reg=await navigator.serviceWorker.register('./service-worker.js',{updateViaCache:'none'});
-  reg.update().catch(()=>{});
-  const reloadKey='fcd_sw_auto_reloaded';
-  if(sessionStorage.getItem(reloadKey)==='1')sessionStorage.removeItem(reloadKey);
-  navigator.serviceWorker.addEventListener('controllerchange',()=>{
-   if(sessionStorage.getItem(reloadKey)==='1')return;
-   sessionStorage.setItem(reloadKey,'1');
-   location.reload();
-  });
- }catch(err){console.warn('Pembaruan aplikasi tidak dapat diperiksa:',err)}
-});
+if('serviceWorker'in navigator&&location.protocol!=='file:')window.addEventListener('load',()=>navigator.serviceWorker.register('./service-worker.js').catch(()=>{}));
 nav('dashboard');
 })();
