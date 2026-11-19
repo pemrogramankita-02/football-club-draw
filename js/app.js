@@ -153,8 +153,9 @@ function generateHybridSchedule(){
 function leagueStandingsPage(){
  let t=active();if(!t)return '';
  let teams=t.clubIds.map(id=>db.clubs.find(c=>c.id===id)).filter(Boolean).map(c=>({club:c,mp:0,w:0,d:0,l:0,gf:0,ga:0,pts:0}));
- let matches=db.matches.filter(m=>m.tournamentId===t.id&&m.round?.startsWith('Pekan')&&m.played);
- matches.forEach(m=>{let a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)return;a.mp++;b.mp++;a.gf+=+m.hs;a.ga+=+m.as;b.gf+=+m.as;b.ga+=+m.hs;if(+m.hs>+m.as){a.w++;b.l++;a.pts+=3}else if(+m.hs<+m.as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}});
+ // Hitung semua hasil sah pada turnamen Liga, tanpa bergantung pada teks label Pekan/Matchday.
+ let matches=db.matches.filter(m=>m.tournamentId===t.id&&m.played&&m.home&&m.away&&m.hs!==null&&m.hs!==undefined&&m.hs!==''&&m.as!==null&&m.as!==undefined&&m.as!==''&&Number.isInteger(Number(m.hs))&&Number.isInteger(Number(m.as))&&Number(m.hs)>=0&&Number(m.as)>=0);
+ matches.forEach(m=>{let a=teams.find(x=>x.club.id===m.home),b=teams.find(x=>x.club.id===m.away);if(!a||!b)return;const hs=Number(m.hs),as=Number(m.as);a.mp++;b.mp++;a.gf+=hs;a.ga+=as;b.gf+=as;b.ga+=hs;if(hs>as){a.w++;b.l++;a.pts+=3}else if(hs<as){b.w++;a.l++;b.pts+=3}else{a.d++;b.d++;a.pts++;b.pts++}});
  teams=teams.map(x=>({...x,gd:x.gf-x.ga})).sort((a,b)=>b.pts-a.pts||b.gf-a.gf||b.gd-a.gd||a.ga-b.ga||a.club.name.localeCompare(b.club.name));
  return `<div class="section-head"><div><h2>Klasemen Liga</h2><p>${esc(t.name)} • Menang 3 poin, seri 1 poin.</p></div><div class="actions"><button class="btn btn-gold" data-action="shareActualStandings">Bagikan Klasemen • SUPER HD+</button><button class="btn btn-ghost" data-go="schedule">Lihat Jadwal</button></div></div><div class="panel table-wrap"><table><thead><tr><th>#</th><th>Klub</th><th>MP</th><th>M</th><th>S</th><th>K</th><th>GM</th><th>GK</th><th>SG</th><th>PTS</th></tr></thead><tbody>${teams.map((x,i)=>`<tr><td>${i+1}</td><td><b>${esc(x.club.name)}</b></td><td>${x.mp}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td><b>${x.pts}</b></td></tr>`).join('')}</tbody></table></div>${topScoringClubPanel()}`
 }
@@ -302,22 +303,31 @@ function editScore(id){
  let a=db.clubs.find(c=>c.id===m.home),b=db.clubs.find(c=>c.id===m.away);
  const matchTournament=db.tournaments.find(t=>t.id===m.tournamentId);
  const isKnockout=matchTournament?.format==='knockout'||(matchTournament?.format==='hybrid'&&!!(m.round&&!m.group));
- let body=`${field(isKnockout?'Gol akhir kandang (termasuk extra time)':'Gol tim kandang','hs',m.hs??0,'number','min="0" step="1"')}${field(isKnockout?'Gol akhir tandang (termasuk extra time)':'Gol tim tandang','as',m.as??0,'number','min="0" step="1"')}`;
+ const scoreValue=(v)=>m.played&&v!==null&&v!==undefined?v:'';
+ let body=`${field(isKnockout?'Gol akhir kandang (termasuk extra time)':'Gol tim kandang','hs',scoreValue(m.hs),'number','min="0" step="1"')}${field(isKnockout?'Gol akhir tandang (termasuk extra time)':'Gol tim tandang','as',scoreValue(m.as),'number','min="0" step="1"')}<p class="hint">Isi kedua skor untuk menyimpan hasil. Kosongkan kedua kolom lalu tekan Simpan, atau gunakan Reset Hasil untuk mengembalikan pertandingan ke Belum dimainkan.</p><button type="button" class="btn btn-danger btn-sm" id="resetMatchScore">Reset Hasil Pertandingan</button>`;
  if(m.group)body+=`<div class="form-grid">${field('Kartu kuning kandang','homeYellow',m.homeYellow??0,'number','min="0" step="1"')}${field('Kartu merah kandang','homeRed',m.homeRed??0,'number','min="0" step="1"')}${field('Kartu kuning tandang','awayYellow',m.awayYellow??0,'number','min="0" step="1"')}${field('Kartu merah tandang','awayRed',m.awayRed??0,'number','min="0" step="1"')}</div>`;
  if(isKnockout)body+=`${field('Gol penalti kandang (terpisah)','homePens',m.homePens??'','number','min="0" step="1"')}${field('Gol penalti tandang (terpisah)','awayPens',m.awayPens??'','number','min="0" step="1"')}`+selectField('Pemenang jika skor imbang (adu penalti)','winnerId',[['','Pilih pemenang adu penalti'],[m.home,a?.name||'Tim kandang'],[m.away,b?.name||'Tim tandang']],m.winnerId||'');
+ const resetResult=()=>{
+  if(!confirm('Reset hasil pertandingan ini? Jadwal dan klub tetap tersimpan.'))return;
+  m.played=false;m.hs=null;m.as=null;m.homeYellow=0;m.homeRed=0;m.awayYellow=0;m.awayRed=0;m.homePens=null;m.awayPens=null;m.winnerId='';
+  if(isKnockout)advanceKnockout(m.tournamentId);
+  save();log('Reset hasil pertandingan',{match:id});$('#modal').close();render();toast('Hasil direset. Pertandingan kembali menjadi Belum dimainkan.');
+ };
  modal('Input Hasil Pertandingan',body,()=>{
-  const hsRaw=formVal('hs'),asRaw=formVal('as'),winnerId=formVal('winnerId');
-  if(hsRaw===''||asRaw===''||!Number.isInteger(Number(hsRaw))||!Number.isInteger(Number(asRaw))||Number(hsRaw)<0||Number(asRaw)<0){toast('Masukkan skor berupa bilangan bulat 0 atau lebih.');return false}
+  const hsRaw=formVal('hs').trim(),asRaw=formVal('as').trim(),winnerId=formVal('winnerId');
+  if(hsRaw===''&&asRaw===''){resetResult();return false}
+  if(hsRaw===''||asRaw===''||!Number.isInteger(Number(hsRaw))||!Number.isInteger(Number(asRaw))||Number(hsRaw)<0||Number(asRaw)<0){toast('Isi kedua kolom skor dengan bilangan bulat 0 atau lebih, atau kosongkan keduanya untuk reset.');return false}
   const hs=Number(hsRaw),as=Number(asRaw);
   if(isKnockout&&hs===as&&!winnerId){toast('Skor knockout imbang. Pilih pemenang adu penalti.');return false}
-  if(isKnockout&&hs!==as&&winnerId){/* winner is determined by full-time score */}
   m.hs=hs;m.as=as;m.homeYellow=Number(formVal('homeYellow')||0);m.homeRed=Number(formVal('homeRed')||0);m.awayYellow=Number(formVal('awayYellow')||0);m.awayRed=Number(formVal('awayRed')||0);m.homePens=formVal('homePens')===''?null:Number(formVal('homePens'));m.awayPens=formVal('awayPens')===''?null:Number(formVal('awayPens'));m.played=true;
   m.winnerId=hs>as?m.home:hs<as?m.away:(isKnockout?winnerId:'');
   if(isKnockout)advanceKnockout(m.tournamentId);
   save();log('Input skor',{match:id,hs:m.hs,as:m.as,winnerId:m.winnerId});render();
   toast(isKnockout?'Hasil disimpan. Pemenang diteruskan ke babak berikutnya.':'Hasil pertandingan disimpan.');
  });
+ $('#modal #resetMatchScore')?.addEventListener('click',resetResult);
 }
+
 function roundLabel(size){
  if(size>=32)return 'Babak 32 Besar';if(size===16)return 'Babak 16 Besar';if(size===8)return 'Perempat Final';if(size===4)return 'Semifinal';if(size===2)return 'Final';return 'Knockout'
 }
